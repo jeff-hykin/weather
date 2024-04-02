@@ -23,13 +23,18 @@ const hourlyData = weatherData?.properties?.periods
 var todayLimit = (new DateTime()).add({days:1}).unix
 var todaysHourlyData = hourlyData.filter(each => (new DateTime(each.startTime)).unix<todayLimit)
 var otherHourlyData = hourlyData.filter(each => (new DateTime(each.startTime)).unix>=todayLimit)
-
 document.body = html`
-    <body font-size=15px background-color=whitesmoke overflow=scroll width=100vw background=cornflowerblue>
+    <body font-size=15px background-color=whitesmoke overflow=scroll width=100vw>
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <Column>
-            <HourlyTimeline periods=${todaysHourlyData} width=500px height=300px style="background-color: white;"/>
-            <HourlyTimeline periods=${otherHourlyData} width=500px height=300px style="background-color: white;"/>
+            <Row style="margin: 2rem; background-color: white; box-sizing: content-box; padding: 1rem; border-radius: 0.5rem; box-shadow: 0 4px 5px 0 rgba(0,0,0,0.10),0 1px 10px 0 rgba(0,0,0,0.08),0 2px 4px -1px rgba(0,0,0,0.24);" verticalAlignment="center" horizontalAlignment="center" overflow="hidden" position="relative">
+                <div position="absolute" style="left: -5px; height: 100%; width: 35px; background-color: white;" />
+                <HourlyTimeline periods=${todaysHourlyData} width=500px height=300px style="background-color: white; margin-left: -25px;" showDayNames=${false}/>
+            </Row>
+            <Row style="margin: 2rem; background-color: white; box-sizing: content-box; padding: 1rem; border-radius: 0.5rem; box-shadow: 0 4px 5px 0 rgba(0,0,0,0.10),0 1px 10px 0 rgba(0,0,0,0.08),0 2px 4px -1px rgba(0,0,0,0.24);" verticalAlignment="center" horizontalAlignment="center" overflow="hidden" position="relative">
+                <div position="absolute" style="left: -5px; height: 100%; width: 35px; background-color: white;" />
+                <HourlyTimeline periods=${otherHourlyData} width=500px height=300px style="background-color: white; margin-left: -25px;" />
+            </Row>
         </Column>
     </body>
 `

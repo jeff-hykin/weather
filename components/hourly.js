@@ -2,9 +2,7 @@ import { Chart } from "../generic_tooling/charts.js"
 // import DateTime from "https://deno.land/x/good@1.6.1.3/date.js"
 import { DateTime } from "../imports.js"
 
-
-window.Chart = Chart
-export function HourlyTimeline({periods, style, width, height}) {
+export function HourlyTimeline({periods, style, width, height, showDayNames=true}) {
     var hourlyData = periods
     // hourlyData = [
     //     {
@@ -53,18 +51,23 @@ export function HourlyTimeline({periods, style, width, height}) {
     var hasPassedPm = false
     var passedFirstDay = false
     var labels = []
-    for (const each of startTimes) {
-        let label = `${each.hour12}${each.amPm}`
-        if (each.amPm=="pm") {
-            hasPassedPm = true
-        }
-        if (hasPassedPm && each.amPm=="am") {
-            passedFirstDay = true
-        }
-        if (passedFirstDay) {
-            label = `${each.weekDayShort} ${each.hour12}${each.amPm}`
-        }
-        labels.push(label)
+    // for (const each of startTimes) {
+    //     let label = `${each.hour12}${each.amPm}`
+    //     if (each.amPm=="pm") {
+    //         hasPassedPm = true
+    //     }
+    //     if (hasPassedPm && each.amPm=="am") {
+    //         passedFirstDay = true
+    //     }
+    //     if (passedFirstDay) {
+    //         label = `${each.weekDayShort} ${each.hour12}${each.amPm}`
+    //     }
+    //     labels.push(label)
+    // }
+    if (showDayNames) {
+        labels = startTimes.map(each => `${each.weekDayShort} ${each.hour12}${each.amPm}`)
+    } else {
+        labels = startTimes.map(each => `${each.hour12}${each.amPm}`)
     }
     let accumulator = 0
     var chartData = {
@@ -100,7 +103,7 @@ export function HourlyTimeline({periods, style, width, height}) {
                     fill: true,
                 },
                 {
-                    label: 'Nighttime',
+                    label: 'Night',
                     yAxisID: 'dayOrNight',
                     data: hourlyData.map(each => {
                         let output = -75*((accumulator>=1)-0) + -25*((accumulator>=2)-0)
@@ -124,8 +127,17 @@ export function HourlyTimeline({periods, style, width, height}) {
             ]
         },
         options: {
+            layout: {
+                padding: 20
+            },
             scales: {
                 x: {
+                    grid: {
+                        display: false,
+                        drawOnChartArea: false,
+                        drawTicks: false,
+                        color: 'rgb(51, 47, 59, 0)',
+                    },
                     ticks: {
                         callback: function(val, index) {
                             // Hide every 2nd tick label
@@ -168,6 +180,9 @@ export function HourlyTimeline({periods, style, width, height}) {
                             size: 14,
                         },
                     },
+                    grid: {
+                         color: 'whitesmoke',
+                    },
                 },
                 rain: {
                     max: 100,
@@ -181,6 +196,9 @@ export function HourlyTimeline({periods, style, width, height}) {
                     ticks: {
                         display: false
                     },
+                    grid: {
+                         color: 'rgb(51, 47, 59, 0)',
+                    },
                 },
                 dayOrNight: {
                     max: 0,
@@ -192,6 +210,9 @@ export function HourlyTimeline({periods, style, width, height}) {
                     },
                     ticks: {
                         display: false
+                    },
+                    grid: {
+                         color: 'rgb(51, 47, 59, 0)',
                     },
                 }
             }
