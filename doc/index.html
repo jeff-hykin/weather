@@ -1,0 +1,3087 @@
+<!DOCTYPE html>
+<head>
+    <title>Weather</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="https://unpkg.com/css-baseline/css/3.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto');
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@100&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap');
+        :root {
+            --gray-pallet-background: rgb(30, 37, 53);
+            --red-pallet-background: lightcoral;
+            --off-white: hsl(0, 0%, 87.8%);
+            --charcoal: hsl(180, 0%, 31%);
+            --charcoal-on-charcoal: hsl(0deg 0% 50%);
+            --soft-gray-gradient: linear-gradient(-110deg, whitesmoke, var(--off-white));
+            /* misc */
+            --red-pallet-font: white;
+            --decent-color-1: lightcoral;
+            --decent-color-2: salmon;
+            --decent-color-3: lightpink;
+            --decent-color-4: lightsalmon;
+            --decent-color-5: coral;
+            --decent-color-6: lightcyan;
+            --decent-color-7: lightblue;
+            --decent-color-8: lightsteelblue;
+            --decent-color-9: skyblue;
+            --decent-color-10: lightskyblue;
+            --decent-color-11: cornflowerblue;
+            --decent-color-12: dodgerblue;
+            --decent-color-13: aquamarine;
+            --decent-color-14: turquoise;
+            --decent-color-15: darkturquoise;
+            --decent-color-16: lightseagreen;
+            --decent-color-17: darkcyan;
+            --decent-color-18: teal;
+            --decent-color-19: mediumspringgreen;
+            --decent-color-20: lightgreen;
+            --decent-color-21: cadetblue;
+            --decent-color-22: darkorchid;
+            --decent-color-23: blueviolet;
+        }
+        * {
+            min-width: 0;
+        }
+        body {
+            font-size: 0.9em;
+            font-family: Roboto;
+        }
+        .animate {
+            transition: all 0.5s ease-in-out 0s;
+        }
+        .weak-shadow {
+            transition: all 0.3s ease-in-out 0s;
+            box-shadow: 0 4px 5px 0 rgba(0,0,0,0.10),0 1px 10px 0 rgba(0,0,0,0.08),0 2px 4px -1px rgba(0,0,0,0.24);
+        }
+        .weak-shadow:hover {
+            box-shadow: 0 8px 17px 2px rgba(0,0,0,0.10),0 6px 30px 5px rgba(0,0,0,0.08),0 8px 10px -7px rgba(0,0,0,0.16);
+        }
+        button {
+            border-radius: 1em;
+            border: none;
+            background-color: cornflowerblue;
+            padding: 0.5em 1em;
+            color: white;
+        }
+        a {
+            color: lightskyblue;
+            text-decoration: underline;
+        }
+        span {
+            vertical-align: text-top;
+        }
+    </style>
+  <script type="module" crossorigin>
+    import { toString, indent } from 'https://deno.land/x/good@1.6.1.3/string.js';
+import { allKeyDescriptions } from 'https://deno.land/x/good@0.7.8/value.js';
+import DateTime from 'https://deno.land/x/good@1.6.2.0/date.js';
+import 'https://deno.land/x/good@1.6.2.0/array.js';
+import { components } from 'https://deno.land/x/good_component@0.2.12/elements.js';
+import 'https://deno.land/x/good_component@0.2.12/main/animations.js';
+import 'https://deno.land/x/good_component@0.2.12/main/actions.js';
+import 'https://deno.land/x/good_component@0.2.12/main/helpers.js';
+import { wrapAroundGet } from 'https://deno.land/x/good@1.5.1.0/array.js';
+import 'https://deno.land/x/storage_object@0.0.2.0/main.js';
+import * as ChartJS from 'https://esm.sh/chart.js@4.4.2/';
+import * as de from 'https://esm.sh/date-fns@3.6.0';
+
+true&&(function polyfill() {
+    const relList = document.createElement('link').relList;
+    if (relList && relList.supports && relList.supports('modulepreload')) {
+        return;
+    }
+    for (const link of document.querySelectorAll('link[rel="modulepreload"]')) {
+        processPreload(link);
+    }
+    new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+            if (mutation.type !== 'childList') {
+                continue;
+            }
+            for (const node of mutation.addedNodes) {
+                if (node.tagName === 'LINK' && node.rel === 'modulepreload')
+                    processPreload(node);
+            }
+        }
+    }).observe(document, { childList: true, subtree: true });
+    function getFetchOpts(link) {
+        const fetchOpts = {};
+        if (link.integrity)
+            fetchOpts.integrity = link.integrity;
+        if (link.referrerPolicy)
+            fetchOpts.referrerPolicy = link.referrerPolicy;
+        if (link.crossOrigin === 'use-credentials')
+            fetchOpts.credentials = 'include';
+        else if (link.crossOrigin === 'anonymous')
+            fetchOpts.credentials = 'omit';
+        else
+            fetchOpts.credentials = 'same-origin';
+        return fetchOpts;
+    }
+    function processPreload(link) {
+        if (link.ep)
+            // ep marker = processed
+            return;
+        link.ep = true;
+        // prepopulate the load record
+        const fetchOpts = getFetchOpts(link);
+        fetch(link.href, fetchOpts);
+    }
+}());
+
+// minimized xhtm from: https://github.com/dy/xhtm
+    const FIELD = "\ue000",
+        QUOTES = "\ue001";
+
+    function htm(statics) {
+        let h = this,
+            prev = 0,
+            current = [null],
+            field = 0,
+            args,
+            name,
+            value,
+            quotes = [],
+            quote = 0,
+            last,
+            level = 0,
+            pre = false;
+
+        const evaluate = (str, parts = [], raw) => {
+            let i = 0;
+            str = !raw && str === QUOTES ? quotes[quote++].slice(1, -1) : str.replace(/\ue001/g, (m) => quotes[quote++]);
+
+            if (!str) return str
+            str.replace(/\ue000/g, (match, idx) => {
+                if (idx) parts.push(str.slice(i, idx));
+                i = idx + 1;
+                return parts.push(arguments[++field])
+            });
+            if (i < str.length) parts.push(str.slice(i));
+            return parts.length > 1 ? parts : parts[0]
+        };
+
+        // close level
+        const up = () => {
+[current, last, ...args] = current;
+            current.push(h(last, ...args));
+            if (pre === level--) pre = false; // reset <pre>
+        };
+
+        let str = statics
+            .join(FIELD)
+            .replace(/<!--[^]*?-->/g, "")
+            .replace(/<!\[CDATA\[[^]*\]\]>/g, "")
+            .replace(/('|")[^\1]*?\1/g, (match) => (quotes.push(match), QUOTES));
+
+        // ...>text<... sequence
+        str.replace(/(?:^|>)((?:[^<]|<[^\w\ue000\/?!>])*)(?:$|<)/g, (match, text, idx, str) => {
+            let tag, close;
+
+            if (idx) {
+                str.slice(prev, idx)
+                    // <abc/> → <abc />
+                    .replace(/(\S)\/$/, "$1 /")
+                    .split(/\s+/)
+                    .map((part, i) => {
+                        // </tag>, </> .../>
+                        if (part[0] === "/") {
+                            part = part.slice(1);
+                            // ignore duplicate empty closers </input>
+                            if (EMPTY[part]) return
+                            // ignore pairing self-closing tags
+                            close = tag || part || 1;
+                            // skip </input>
+                        }
+                        // <tag
+                        else if (!i) {
+                            tag = evaluate(part);
+                            // <p>abc<p>def, <tr><td>x<tr>
+                            if (typeof tag === "string") {
+                                while (CLOSE[current[1] + tag]) up();
+                            }
+                            current = [current, tag, null];
+                            level++;
+                            if (!pre && PRE[tag]) pre = level;
+                            // console.log('+level', tag)
+                            if (EMPTY[tag]) close = tag;
+                        }
+                        // attr=...
+                        else if (part) {
+                            let props = current[2] || (current[2] = {});
+                            if (part.slice(0, 3) === "...") {
+                                Object.assign(props, arguments[++field]);
+                            } else {
+[name, value] = part.split("=");
+                                Array.isArray((value = props[evaluate(name)] = value ? evaluate(value) : true)) &&
+                                    // if prop value is array - make sure it serializes as string without csv
+                                    (value.toString = value.join.bind(value, ""));
+                            }
+                        }
+                    });
+            }
+
+            if (close) {
+                if (!current[0]) err(`Wrong close tag \`${close}\``);
+                up();
+                // if last child is optionally closable - close it too
+                while (last !== close && CLOSE[last]) up();
+            }
+            prev = idx + match.length;
+
+            // fix text indentation
+            if (!pre) text = text.replace(/\s*\n\s*/g, "").replace(/\s+/g, " ");
+
+            if (text) evaluate(((last = 0), text), current, true);
+        });
+
+        if (current[0] && CLOSE[current[1]]) up();
+
+        if (level) err(`Unclosed \`${current[1]}\`.`);
+
+        return current.length < 3 ? current[1] : (current.shift(), current)
+    }
+
+    const err = (msg) => {
+        throw SyntaxError(msg)
+    };
+
+    // self-closing elements
+    const EMPTY = (htm.empty = {});
+
+    // optional closing elements
+    const CLOSE = (htm.close = {});
+
+    // preformatted text elements
+    const PRE = (htm.pre = {});
+
+    // https://github.com/wooorm/html-void-elements/blob/main/index.js
+    "area base basefont bgsound br col command embed frame hr image img input keygen link meta param source track wbr ! !doctype ? ?xml".split(" ").map((v) => (htm.empty[v] = true));
+
+    // https://html.spec.whatwg.org/multipage/syntax.html#optional-tags
+    // closed by the corresponding tag or end of parent content
+    let close = {
+        li: "",
+        dt: "dd",
+        dd: "dt",
+        p: "address article aside blockquote details div dl fieldset figcaption figure footer form h1 h2 h3 h4 h5 h6 header hgroup hr main menu nav ol pre section table",
+        rt: "rp",
+        rp: "rt",
+        optgroup: "",
+        option: "optgroup",
+        caption: "tbody thead tfoot tr colgroup",
+        colgroup: "thead tbody tfoot tr caption",
+        thead: "tbody tfoot caption",
+        tbody: "tfoot caption",
+        tfoot: "caption",
+        tr: "tbody tfoot",
+        td: "th tr",
+        th: "td tr tbody",
+    };
+    for (let tag in close) {
+        for (let closer of [...close[tag].split(" "), tag]) htm.close[tag] = htm.close[tag + closer] = true;
+    }
+
+    "pre textarea".split(" ").map((v) => (htm.pre[v] = true));
+    const xhtm = htm;
+
+// 
+// actual elemental
+// 
+const validStyleAttribute = Object.freeze(new Set(["accent-color","align-content","align-items","align-self","align-tracks","all","animation","animation-delay","animation-direction","animation-duration","animation-fill-mode","animation-iteration-count","animation-name","animation-play-state","animation-timeline","animation-timing-function","appearance","ascent-override","aspect-ratio","backdrop-filter","backface-visibility","background","background-attachment","background-blend-mode","background-clip","background-color","background-image","background-origin","background-position","background-position-x","background-position-y","background-repeat","background-size","bleed","block-overflow","block-size","border","border-block","border-block-color","border-block-end","border-block-end-color","border-block-end-style","border-block-end-width","border-block-start","border-block-start-color","border-block-start-style","border-block-start-width","border-block-style","border-block-width","border-bottom","border-bottom-color","border-bottom-left-radius","border-bottom-right-radius","border-bottom-style","border-bottom-width","border-collapse","border-color","border-end-end-radius","border-end-start-radius","border-image","border-image-outset","border-image-repeat","border-image-slice","border-image-source","border-image-width","border-inline","border-inline-color","border-inline-end","border-inline-end-color","border-inline-end-style","border-inline-end-width","border-inline-start","border-inline-start-color","border-inline-start-style","border-inline-start-width","border-inline-style","border-inline-width","border-left","border-left-color","border-left-style","border-left-width","border-radius","border-right","border-right-color","border-right-style","border-right-width","border-spacing","border-start-end-radius","border-start-start-radius","border-style","border-top","border-top-color","border-top-left-radius","border-top-right-radius","border-top-style","border-top-width","border-width","bottom","box-decoration-break","box-shadow","box-sizing","break-after","break-before","break-inside","caption-side","caret-color","clear","clip","clip-path","color","color-scheme","column-count","column-fill","column-gap","column-rule","column-rule-color","column-rule-style","column-rule-width","column-span","column-width","columns","contain","content","content-visibility","counter-increment","counter-reset","counter-set","cursor","length","angle","descent-override","direction","display","resolution","empty-cells","fallback","filter","flex","flex-basis","flex-direction","flex-flow","flex-grow","flex-shrink","flex-wrap","flex_value","float","font","font-display","font-family","font-feature-settings","font-kerning","font-language-override","font-optical-sizing","font-size","font-size-adjust","font-stretch","font-style","font-synthesis","font-variant","font-variant-alternates","font-variant-caps","font-variant-east-asian","font-variant-ligatures","font-variant-numeric","font-variant-position","font-variation-settings","font-weight","forced-color-adjust","gap","grid","grid-area","grid-auto-columns","grid-auto-flow","grid-auto-rows","grid-column","grid-column-end","grid-column-start","grid-row","grid-row-end","grid-row-start","grid-template","grid-template-areas","grid-template-columns","grid-template-rows","frequency","hanging-punctuation","height","hyphenate-character","hyphens","image-orientation","image-rendering","image-resolution","inherit","inherits","initial","initial-letter","initial-letter-align","initial-value","inline-size","input-security","inset","inset-block","inset-block-end","inset-block-start","inset-inline","inset-inline-end","inset-inline-start","isolation","justify-content","justify-items","justify-self","justify-tracks","left","letter-spacing","line-break","line-clamp","line-gap-override","line-height","line-height-step","list-style","list-style-image","list-style-position","list-style-type","margin","margin-block","margin-block-end","margin-block-start","margin-bottom","margin-inline","margin-inline-end","margin-inline-start","margin-left","margin-right","margin-top","margin-trim","marks","mask","mask-border","mask-border-mode","mask-border-outset","mask-border-repeat","mask-border-slice","mask-border-source","mask-border-width","mask-clip","mask-composite","mask-image","mask-mode","mask-origin","mask-position","mask-repeat","mask-size","mask-type","masonry-auto-flow","math-style","max-block-size","max-height","max-inline-size","max-lines","max-width","max-zoom","min-block-size","min-height","min-inline-size","min-width","min-zoom","mix-blend-mode","time","negative","object-fit","object-position","offset","offset-anchor","offset-distance","offset-path","offset-position","offset-rotate","opacity","order","orientation","orphans","outline","outline-color","outline-offset","outline-style","outline-width","overflow","overflow-anchor","overflow-block","overflow-clip-margin","overflow-inline","overflow-wrap","overflow-x","overflow-y","overscroll-behavior","overscroll-behavior-block","overscroll-behavior-inline","overscroll-behavior-x","overscroll-behavior-y","Pseudo-classes","Pseudo-elements","pad","padding","padding-block","padding-block-end","padding-block-start","padding-bottom","padding-inline","padding-inline-end","padding-inline-start","padding-left","padding-right","padding-top","page-break-after","page-break-before","page-break-inside","paint-order","perspective","perspective-origin","place-content","place-items","place-self","pointer-events","position","prefix","print-color-adjust","quotes","range","resize","revert","right","rotate","row-gap","ruby-align","ruby-merge","ruby-position","scale","scroll-behavior","scroll-margin","scroll-margin-block","scroll-margin-block-end","scroll-margin-block-start","scroll-margin-bottom","scroll-margin-inline","scroll-margin-inline-end","scroll-margin-inline-start","scroll-margin-left","scroll-margin-right","scroll-margin-top","scroll-padding","scroll-padding-block","scroll-padding-block-end","scroll-padding-block-start","scroll-padding-bottom","scroll-padding-inline","scroll-padding-inline-end","scroll-padding-inline-start","scroll-padding-left","scroll-padding-right","scroll-padding-top","scroll-snap-align","scroll-snap-stop","scroll-snap-type","scrollbar-color","scrollbar-gutter","scrollbar-width","shape-image-threshold","shape-margin","shape-outside","size","size-adjust","speak-as","src","suffix","symbols","syntax","system","tab-size","table-layout","text-align","text-align-last","text-combine-upright","text-decoration","text-decoration-color","text-decoration-line","text-decoration-skip","text-decoration-skip-ink","text-decoration-style","text-decoration-thickness","text-emphasis","text-emphasis-color","text-emphasis-position","text-emphasis-style","text-indent","text-justify","text-orientation","text-overflow","text-rendering","text-shadow","text-size-adjust","text-transform","text-underline-offset","text-underline-position","top","touch-action","transform","transform-box","transform-origin","transform-style","transition","transition-delay","transition-duration","transition-property","transition-timing-function","translate","unicode-bidi","unicode-range","unset","user-select","user-zoom","vertical-align","viewport-fit","visibility","white-space","widows","width","will-change","word-break","word-spacing","word-wrap","writing-mode","z-index","zoom"]));
+const validNonCallbackHtmlAttributes = Object.freeze(new Set([ "class", "style", "value", "id", "contenteditable", "href", "hidden", "autofocus", "src", "name", "accept", "accesskey", "action", "align", "alt", "async", "autocomplete", "autoplay", "border", "charset", "checked", "cite", "cols", "colspan", "content", "controls", "coords", "data", "datetime", "default", "defer", "dir", "dirname", "disabled", "download", "draggable", "enctype", "for", "form", "formaction", "headers", "high", "hreflang", "http", "ismap", "kind", "label", "lang", "list", "loop", "low", "max", "maxlength", "media", "method", "min", "multiple", "muted", "novalidate", "open", "optimum", "pattern", "placeholder", "poster", "preload", "readonly", "rel", "required", "reversed", "rows", "rowspan", "sandbox", "scope", "selected", "shape", "size", "sizes", "span", "spellcheck", "srcdoc", "srclang", "srcset", "start", "step", "tabindex", "target", "title", "translate", "type", "usemap", "wrap", "bgcolor", "width", "color", "height", ]));
+const isValidStyleAttribute = (key)=>key.startsWith('-')||validStyleAttribute.has(key);
+const kebabCase = (string)=>string.replace(/[a-z]([A-Z])(?=[a-z])/g, (each)=>`${each[0]}-${each.slice(1).toLowerCase()}`);
+const isConstructor = (obj)=>!!obj.prototype && !!obj.prototype.constructor.name;
+const attachProperties = (source, target)=> {
+    // attach all the static attributes
+    const attributes = allKeyDescriptions(source);
+    const propertiesDefition = {};
+    for (const [key, value] of Object.entries(attributes)) {
+        // skip the special keys
+        if (['constructor', 'prototype','length',].includes(key)) {
+            continue
+        }
+        propertiesDefition[key] = {
+            get: ()=>source[key],
+        };
+    }
+    Object.defineProperties(target, propertiesDefition);
+    return target
+};
+
+const toHtmlElement = Symbol.for("toHtmlElement");
+class ElementalClass {
+    constructor(components={}, options={}) {
+        const {middleware, errorComponentFactory, defaultPlaceholderFactory} = options||{};
+        this.components = components||{};
+        this.middleware = middleware||{};
+        this.defaultPlaceholderFactory = defaultPlaceholderFactory||(()=>document.createElement("div"));
+        this.errorComponentFactory = errorComponentFactory||defaultErrorComponentFactory;
+        this.html = this.createElement.bind(this); // alias
+        this.xhtm = xhtm.bind((...args)=>this.createElement(...args)); // bind is "when xhtm is done parsing, how should the element be handed" callback
+    }
+
+    static debug = false
+    static allTags = Symbol.for("allTags")
+    static exclusivelySvgElements = new Set(["svg", "animate", "animateMotion", "animateTransform", "circle", "clipPath", "defs", "desc", "discard", "ellipse", "feBlend", "feColorMatrix", "feComponentTransfer", "feComposite", "feConvolveMatrix", "feDiffuseLighting", "feDisplacementMap", "feDistantLight", "feDropShadow", "feFlood", "feFuncA", "feFuncB", "feFuncG", "feFuncR", "feGaussianBlur", "feImage", "feMerge", "feMergeNode", "feMorphology", "feOffset", "fePointLight", "feSpecularLighting", "feSpotLight", "feTile", "feTurbulence", "filter", "foreignObject", "g", "hatch", "hatchpath", "image", "line", "linearGradient", "marker", "mask", "mesh", "meshgradient", "meshpatch", "meshrow", "metadata", "mpath", "path", "pattern", "polygon", "polyline", "radialGradient", "rect", "set", "stop", "switch", "symbol", "text", "textPath", "tspan", "unknown", "use", "view",])
+    static randomId = (name)=>`${name}${Math.random()}`.replace(".","")
+    static makeHtmlElement = function(element) {
+        if (element instanceof Node || element instanceof Element || element instanceof HTMLDocument) {
+            return element
+        // coerce when possible
+        } else {
+            if (element == null) {
+                return new window.Text("")
+            } else if (typeof element == 'string') {
+                return new window.Text(element)
+            } else if (typeof element == 'symbol') {
+                // symbols throw errors for: `${symbol}`
+                return new window.Text(element.toString())
+            } else if (!(element instanceof Object)) {
+                return new window.Text(`${element}`)
+            } else if (element[toHtmlElement] != null) {
+                return ElementalClass.makeHtmlElement(element[toHtmlElement])
+            } else {
+                let className; 
+                try {
+                    className = Object.getPrototypeOf(element).constructor.name; 
+                    className = `class ${JSON.stringify(className)}`;
+                } catch (error) {}
+                throw Error(`Cannot coerce ${className||element} into an html element\n`, element)
+            }
+        }
+    }
+    static appendChildren = function(element, ...children) {
+        const { element: altElement, insertBefore } = element;
+        let primitiveAppend = (child)=>element.appendChild(child);
+        if (insertBefore && !(insertBefore instanceof Function)) {
+            element = altElement;
+            primitiveAppend = (child)=>element.insertBefore(insertBefore, child);
+        }
+        for (const each of children) {
+            if (each instanceof Array) {
+                // effectively flattens nested arrays
+                ElementalClass.appendChildren(element, ...each);
+            } else if (each instanceof Function) {
+                // recursively
+                ElementalClass.appendChildren(element, each());
+            } else if (each instanceof Promise) {
+                const elementPromise = each;
+                const placeholder = elementPromise.placeholder || document.createElement("div"); // TODO: appendChildren needs to NOT be a static function so that this can use this.defaultPlaceholderFactory()
+                primitiveAppend(placeholder);
+                setTimeout(async () => {
+                    try {
+                        const result = await elementPromise;
+                        if (!(result instanceof Array)) {
+                            const htmlElement = ElementalClass.makeHtmlElement(result);
+                            placeholder.replaceWith(htmlElement);
+                        // if array output
+                        } else {
+                            // TODO: needs a cleaner solution, but it will require a major refactor 
+                            let parentElement = placeholder.parentElement;
+                            if (!parentElement) {
+                                parentElement = await new Promise((resolve, reject)=>{
+                                    let intervalId = setInterval(() => {
+                                        if (placeholder.parentElement) {
+                                            resolve(placeholder.parentElement);
+                                            clearInterval(intervalId);
+                                        }
+                                    }, 70);
+                                });
+                            }
+                            // add all the children
+                            for (const each of result) {
+                                try {
+                                    // recursive so that nested arrays of promises still work
+                                    ElementalClass.appendChildren({
+                                        element: parentElement,
+                                        insertBefore: placeholder,
+                                    }, each);
+                                } catch (error) {
+                                    parentElement.insertBefore(placeholder, createErrorElement(`When async component ${toString(element)} resolved, it created an array. One of those elements in the array caused an error when it tried to be added as a child:\n ${toString(error)}`));
+                                }
+                            }
+                        }
+                    } catch (error) {
+                        placeholder.replaceWith(
+                            defaultErrorComponentFactory({...properties, children}, key, error)
+                        );
+                    }
+                }, 0);
+            } else {
+                primitiveAppend(ElementalClass.makeHtmlElement(each));
+            }
+        }
+        return element
+    }
+    static css = function(first, ...args) {
+        if (typeof first == 'string') {
+            return first
+        } else if (first == null) {
+            return ""
+        // templated string
+        } else if (first instanceof Array) {
+            const strings = first;
+            const values = args;
+            let finalString = "";
+            for (const each of strings) {
+                finalString += each;
+                if (values.length > 0) {
+                    const value = values.shift();
+                    if (value instanceof Object) {
+                        // recursion but always a depth of only +1 from this point
+                        finalString += Elemental.css(value);
+                    } else {
+                        finalString += `${value}`;
+                    }
+                }
+            }
+            return finalString
+        } else if (first instanceof Object) {
+            let finalString = "";
+            for (const [key, value] of Object.entries(first)) {
+                if (value != null) {
+                    finalString += `${kebabCase(key)}: ${value};`;
+                }
+            }
+            return finalString
+        } else {
+            return first
+        }
+    }
+    static combineClasses = (...classes) => {
+        classes = classes.filter(each=>each!=null);
+        let classesFinalList = [];
+        for (let eachEntry of classes) {
+            // handle strings
+            if (typeof eachEntry == 'string') {
+                eachEntry = eachEntry.split(" ");
+            }
+            // handle lists
+            if (eachEntry instanceof Array) {
+                eachEntry = eachEntry.flat(Infinity);
+                for (let eachName of eachEntry) {
+                    classesFinalList.push(eachName);
+                }
+            // handle objects
+            } else if (eachEntry instanceof Object) {
+                for (const [className, enabled] of Object.entries(eachEntry)) {
+                    if (enabled) {
+                        classesFinalList.push(className);
+                    }
+                }
+            }
+        }
+        return classesFinalList
+    }
+
+    createElement(...args) {
+        // template call
+        if (args[0] instanceof Array) {
+            return this.xhtm(...args)
+        // jsx call
+        } else {
+            ElementalClass.debug && console.debug(`args is:`,args);
+
+            // run middleware
+            for (const middleware of (this.middleware[ElementalClass.allTags]||[]).concat((this.middleware[args[0]]||[]))) {
+                try {
+                    args = eachMiddleWare(args);
+                } catch (error) {
+                    console.error("[ElementalClass] one of the middleware functions failed:", eachMiddleWare, args);
+                }
+                // TODO: handle middleware creating invalid arguments
+            }
+            
+            let [ key, properties, ...children ] = args;
+            ElementalClass.debug && console.debug(`key, properties, children is:`,key, properties, children);
+            // lookup custom components
+            if (this.components[key] instanceof Function) {
+                key = this.components[key];
+            }
+            // run custom components
+            if (key instanceof Function) {
+                let output;
+                try {
+                    output = isConstructor(key) ? new key({...properties, children}) : key({...properties, children});
+                } catch (error) {
+                    return this.errorComponentFactory({...properties, children}, key, error)
+                }
+                // allow async components
+                if (output instanceof Promise) {
+                    const elementPromise = output;
+                    const placeholder = elementPromise.placeholder || this.defaultPlaceholderFactory(output);
+                    setTimeout(async () =>{
+                        try {
+                            const result = await elementPromise;
+                            if (!(result instanceof Array)) {
+                                const htmlElement = ElementalClass.makeHtmlElement(result);
+                                placeholder.replaceWith(htmlElement);
+                            // if array output
+                            } else {
+                                // TODO: needs a cleaner solution, but it will require a major refactor
+                                let parentElement = placeholder.parentElement;
+                                if (!parentElement) {
+                                    parentElement = await new Promise((resolve, reject)=>{
+                                        let intervalId = setInterval(() => {
+                                            if (placeholder.parentElement) {
+                                                resolve(placeholder.parentElement);
+                                                clearInterval(intervalId);
+                                            }
+                                        }, 70);
+                                    });
+                                }
+                                // add all the children
+                                for (const each of result) {
+                                    try {
+                                        // recursive so that nested arrays of promises still work
+                                        ElementalClass.appendChildren({
+                                            element: parentElement,
+                                            insertBefore: placeholder,
+                                        }, each);
+                                    } catch (error) {
+                                        parentElement.insertBefore(placeholder, createErrorElement(`Something returned a promise, which resolved to an array, and then something tried to append those to an element (this element: ${element}). One of the items in the array ${each} caused an error when it tried to be added as a child:\n ${toString(error)}`));
+                                    }
+                                }
+                            }
+                        } catch (error) {
+                            placeholder.replaceWith(
+                                this.errorComponentFactory({...properties, children}, key, error)
+                            );
+                        }
+                    }, 0);
+                    return placeholder
+                } else {
+                    return output
+                }
+            }
+            // create either an html element or an svg element
+            const isSvg = ElementalClass.exclusivelySvgElements.has(key);
+            let element;
+            // this if is only because of: https://stackoverflow.com/questions/821359/reload-an-iframe-without-adding-to-the-history
+            if (key == "iframe" && properties.src) {
+                // so stupid
+                const helper = document.createElement("div");
+                helper.innerHTML = `<iframe src=${JSON.stringify(properties.src)}></iframe>`;
+                element = helper.children[0];
+                delete properties.src;
+            } else if (isSvg) {
+                element = document.createElementNS('http://www.w3.org/2000/svg', key);
+            } else {
+                element = document.createElement(key);
+            }
+            let styleString = "";
+            if (properties instanceof Object) {
+                for (let [key, value] of Object.entries(properties)) {
+                    // 
+                    // styles
+                    // 
+                    if (key == 'style') {
+                        // styles are done at the end in a batch
+                        styleString +=  ElementalClass.css(value);
+                        continue
+                    }
+
+                    // 
+                    // events
+                    // 
+                    if (key.slice(0,2) == 'on' && (key.slice(2,3).toLowerCase() !== key.slice(2,3)) && value instanceof Function) {
+                        element.addEventListener(key.slice(2).toLowerCase(), value);
+                    }
+
+                    // 
+                    // css classes
+                    // 
+                    if (key ==  'class') {
+                        if (value instanceof Array) {
+                            value = value.join(" ");
+                        } else if (value instanceof Object) {
+                            let newValue = "";
+                            for (const [classString, enable] of Object.entries(value)) {
+                                if (enable) {
+                                    newValue += classString;
+                                }
+                            }
+                            value = newValue;
+                        }
+                    }
+                    
+                    // 
+                    // svgs
+                    // 
+                    if (isSvg) {
+                        if (value instanceof Array) {
+                            value = value.join(" ");
+                        }
+                        element.setAttribute(kebabCase(key), value);
+                        continue
+                    }
+                    
+                    // 
+                    // direct html attributes
+                    // 
+                    if (value != null && !(value instanceof Object) && validNonCallbackHtmlAttributes.has(key)) {
+                        element.setAttribute(key, value);
+                    }
+
+                    // 
+                    // the object property
+                    // 
+                    try {
+                        element[key] = value;
+                    } catch (error) {
+                        
+                    }
+
+                    // 
+                    // lazy styles
+                    // 
+                    if (isValidStyleAttribute(key)) {
+                        styleString += `;${key}: ${value};`;
+                    }
+                }
+            }
+
+            if (styleString) {
+                // set all styles at once
+                element.setAttribute("style", styleString);
+            }
+            return ElementalClass.appendChildren(element, ...children)
+        }
+    }
+
+    extend(additionalComponents={}, options={}) {
+        const {middleware, ...other} = options||{};
+        return Elemental(
+            {...this.components, ...additionalComponents},
+            {
+                middleware:{...this.middleware, ...middleware},
+                ...other
+            }
+        )
+    }
+}
+
+// 
+// a wrapper so that ElementalClass can pretend to be a function
+//    e.g. Elemental() returns a function, but that function behaves like an instance of new ElementalClass()
+// 
+const Elemental = (...args) => {
+    const elementalObject = new ElementalClass(...args);
+    const createElementFunction = elementalObject.createElement.bind(elementalObject);
+    // attach static and normal attributes
+    attachProperties(ElementalClass, createElementFunction);
+    attachProperties(elementalObject, createElementFunction);
+    return createElementFunction
+};
+attachProperties(ElementalClass, Elemental);
+
+function createErrorElement(error) {
+    const element = document.createElement("div");
+    element.setAttribute('style', `
+        all:              unset;
+        display:          flex;
+        flex-direction:   column;
+        padding:          1.5rem;
+        background-color: #f5a5a8;
+        color:            white;
+        font-family:      -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif;
+        font-size:        18px;
+        font-weight:      400;
+        overflow:         auto;
+    `);
+    element.innerHTML = `I'm sorry, there was an error when loading this part of the page 🙁.<br>Here's the error message: ${ Option(toString(error!=null&&error.message||error)).innerHTML}`;
+
+}
+function defaultErrorComponentFactory({children, ...properties}, key, error) {
+    const element = document.createElement("div");
+    const errorDetails = document.createElement("div");
+    const childContainer = document.createElement("div");
+    
+    // 
+    // error body
+    // 
+    element.setAttribute('style', `
+        all:              unset;
+        display:          flex;
+        flex-direction:   column;
+        padding:          1.5rem;
+        background-color: #f5a5a8;
+        color:            white;
+        font-family:      -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif;
+        font-size:        18px;
+        font-weight:      400;
+        overflow:         auto;
+    `);
+    element.innerHTML = `I'm sorry, there was an error when loading this part of the page 🙁 `;
+    
+    // 
+    // error details
+    // 
+    let errorElementPart;
+    if (typeof key == 'string') {
+        errorElementPart = `&lt;${key} />`;
+    } else {
+        try {
+            // classes
+            errorElementPart = `&lt;${key.prototype.constructor.name} />`;
+        } catch (error) {
+            try {
+                // functions
+                errorElementPart = `&lt;${key.name} />`;
+            } catch (error) {
+                // unknown
+                errorElementPart = `&lt;${key} />`;
+            }
+        }
+    }
+    let errorJsonObject = {};
+    for (const [key, value] of Object.entries(properties)) {
+        try {
+            errorJsonObject[key] = JSON.parse(JSON.stringify(value));
+        } catch (error) {
+            if (typeof value == 'symbol') {
+                errorJsonObject[key] = value.toString();
+            } else {
+                errorJsonObject[key] = `${value}`;
+            }
+        }
+    }
+    
+    errorDetails.innerHTML = `<span>error: ${`${error}`.replace(/\n/, "<br>")}<br>location:<br>${indent({string:error.stack, by:"    "}).replace(/\n/, "<br>")}</span><br><span>tag: ${errorElementPart}</span><br><div>properties:<br><code style="max-height: 12rem; overflow: auto;">${JSON.stringify(errorJsonObject,0,4)}</code></div>`;
+    errorDetails.setAttribute('style', `
+        padding: 1rem;
+        background-color: #161b22;
+        color: #789896;
+        white-space: pre;
+        max-width: 85vw;
+        overflow: auto;
+    `);
+    element.appendChild(errorDetails);
+    // 
+    // children
+    // 
+    childContainer.setAttribute('style', `
+        all: unset
+        display: flex
+        flex-direction: column
+        margin-top: 1.3rem
+    `);
+    for (const each of (children||[])) {
+        try {
+            ElementalClass.appendChildren(childContainer, [each]);
+        } catch (error) {
+        }
+    }
+    element.appendChild(childContainer);
+    return element
+}
+
+// 
+// protect document head by monkey patching it (this is the only monkeypatch)
+// 
+try {
+    const originalHead = document.head;
+    Object.defineProperty(document,"head", { 
+        set: (element) => ElementalClass.appendChildren(originalHead, ...element.childNodes),
+        get: ()=>originalHead,
+        writable: true,
+    });
+} catch (error) {
+    
+}
+
+ElementalClass.combineClasses;
+const html$1 = Elemental();
+ElementalClass.css;
+ElementalClass.allTags;
+
+window.ChartJS = ChartJS;
+ChartJS.Chart.register(...ChartJS.registerables);
+
+function Chart({style, width, height, data}) {
+    data = data || {};
+    const canvas = html$1`<canvas style=${style} background="transparent" color="white"></canvas>`;
+    const context = canvas.getContext("2d");
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = "rgba(0, 0, 0, 0)";
+    canvas.chart = new ChartJS.Chart(canvas, {
+        ...data,
+        plugins: [
+            ...(data?.plugins||[]),
+        ],
+        adapters: {
+            date: {
+                locale: de,
+                ...data?.adapters?.date,
+            },
+            ...data?.adapters,
+        },
+    });
+    return canvas
+}
+
+function HourlyTimeline({periods, style, width, height, showDayNames=true}) {
+    var hourlyData = periods;
+    // hourlyData = [
+    //     {
+    //         number: 94,
+    //         name: "",
+    //         startTime: "2024-04-06T11:00:00-05:00",
+    //         endTime: "2024-04-06T12:00:00-05:00",
+    //         isDaytime: true,
+    //         temperature: 72,
+    //         temperatureUnit: "F",
+    //         temperatureTrend: null,
+    //         probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //         dewpoint: { unitCode: "wmoUnit:degC", value: 15 },
+    //         relativeHumidity: { unitCode: "wmoUnit:percent", value: 63 },
+    //         windSpeed: "20 mph",
+    //         windDirection: "S",
+    //         icon: "https://api.weather.gov/icons/land/day/bkn,0?size=small",
+    //         shortForecast: "Partly Sunny",
+    //         detailedForecast: ""
+    //     },
+    //     {
+    //         number: 95,
+    //         name: "",
+    //         startTime: "2024-04-06T12:00:00-05:00",
+    //         endTime: "2024-04-06T13:00:00-05:00",
+    //         isDaytime: true,
+    //         temperature: 75,
+    //         temperatureUnit: "F",
+    //         temperatureTrend: null,
+    //         probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //         dewpoint: { unitCode: "wmoUnit:degC", value: 15 },
+    //         relativeHumidity: { unitCode: "wmoUnit:percent", value: 58 },
+    //         windSpeed: "20 mph",
+    //         windDirection: "S",
+    //         icon: "https://api.weather.gov/icons/land/day/bkn,0?size=small",
+    //         shortForecast: "Partly Sunny",
+    //         detailedForecast: ""
+    //     },
+    // ]
+    var dataMax = Math.max(...hourlyData.map(each => each.temperature));
+    var dataMin = Math.min(...hourlyData.map(each => each.temperature));
+    var max = Math.max(dataMax, 100);
+    var min = Math.min(dataMin, 0);
+    var startTimes = hourlyData.map(each => (new DateTime(each.startTime)));
+    startTimes.map(each => `${each.hour12}${each.amPm}`);
+    var labels = [];
+    // for (const each of startTimes) {
+    //     let label = `${each.hour12}${each.amPm}`
+    //     if (each.amPm=="pm") {
+    //         hasPassedPm = true
+    //     }
+    //     if (hasPassedPm && each.amPm=="am") {
+    //         passedFirstDay = true
+    //     }
+    //     if (passedFirstDay) {
+    //         label = `${each.weekDayShort} ${each.hour12}${each.amPm}`
+    //     }
+    //     labels.push(label)
+    // }
+    if (showDayNames) {
+        labels = startTimes.map(each => `${each.weekDayShort} ${each.hour12}${each.amPm}`);
+    } else {
+        labels = startTimes.map(each => `${each.hour12}${each.amPm}`);
+    }
+    let accumulator = 0;
+    var chartData = {
+        type: 'line',
+        data: {
+            labels: labels, // ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+            datasets: [
+                {
+                    label: 'Temperature (°F)',
+                    yAxisID: 'temperature',
+                    data: hourlyData.map(each => each.temperature),
+                    borderColor: 'rgb(255, 99, 132)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    radius: 2,
+                    fill: false
+                },
+                {
+                    label: 'Risk of Rain (%)',
+                    yAxisID: 'rain',
+                    data: hourlyData.map(each => each.probabilityOfPrecipitation.value),
+                    radius: 0,
+                    borderColor: 'rgb(54, 162, 235)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                    fill: true
+                },
+                {
+                    label: 'Wind (mph)',
+                    yAxisID: 'wind',
+                    data: hourlyData.map(each => each.windSpeed.replace(/ mph/g, "")-0),
+                    radius: 0,
+                    borderColor: 'rgb(89, 227, 197)',
+                    backgroundColor: 'rgb(89, 227, 197, 0.3)',
+                    fill: true,
+                },
+                {
+                    label: 'Night',
+                    yAxisID: 'dayOrNight',
+                    data: hourlyData.map(each => {
+                        let output = -75*((accumulator>=1)-0) + -25*((accumulator>=2)-0);
+                        if (!each.isDaytime) {
+                            if (accumulator < 2) {
+                                accumulator += 1;
+                            }
+                        } else {
+                            if (accumulator > 0) {
+                                accumulator -= 1;
+                            }
+                        }
+                        return output
+                    }),
+                    radius: 0,
+                    borderColor: 'rgb(51, 47, 59, 0)',
+                    backgroundColor: 'rgb(51, 47, 59, 0.3)',
+                    tension: 0.4,
+                    fill: true
+                },
+            ]
+        },
+        options: {
+            plugins: {
+                legend: {
+                    // display: false,
+                    fontColor: 'white',
+                    color: 'white',
+                    labels: {
+                        color: 'white',
+                    },
+                    font: {
+                        size: 14,
+                        color: 'white',
+                    }
+                },
+            },
+            layout: {
+                padding: 20
+            },
+            scales: {
+                x: {
+                    grid: {
+                        // display: false,
+                        // drawOnChartArea: false,
+                        // drawTicks: false,
+                        color: 'rgb(51, 47, 59, 0)',
+                    },
+                    ticks: {
+                        color: 'rgb(255, 255, 255)',
+                        callback: function(val, index) {
+                            // Hide every 2nd tick label
+                            return index % 2 === 0 ? this.getLabelForValue(val) : '';
+                        },
+                        font: {
+                            size: 14
+                        },
+                    }
+                },
+                wind: {
+                    max: 100,
+                    min: 0,
+                    type: 'linear',
+                    position: 'left',
+                    scaleLabel: {
+                        display: true,
+                        labelString: 'Wind (mph)',
+                        color: 'rgb(255, 255, 255)',
+                    },
+                    ticks: {
+                        color: 'rgb(255, 255, 255)',
+                        display: false
+                    },
+                },
+                temperature: {
+                    max,
+                    min,
+                    id: 'temperature',
+                    type: 'linear',
+                    position: 'left',
+                    scaleLabel: {
+                        display: true,
+                        labelString: 'Temperature (°F)'
+                    },
+                    ticks: {
+                        display: true,
+                        callback: function(value, index, values) {
+                            return index % 2 === 0 ? "         "+value + '°F' : '';
+                        },
+                        color: 'rgb(255, 255, 255)',
+                        font: {
+                            size: 14,
+                        },
+                    },
+                    grid: {
+                         color: 'rgb(255, 255, 255, 0.3)',
+                    },
+                },
+                rain: {
+                    max: 100,
+                    min: 0,
+                    type: 'linear',
+                    position: 'left',
+                    scaleLabel: {
+                        display: true,
+                        labelString: 'Risk of Rain (%)'
+                    },
+                    ticks: {
+                        display: false
+                    },
+                    grid: {
+                         color: 'rgb(51, 47, 59, 0)',
+                    },
+                },
+                dayOrNight: {
+                    max: 0,
+                    min: -100,
+                    type: 'linear',
+                    position: 'left',
+                    scaleLabel: {
+                        display: false,
+                    },
+                    ticks: {
+                        color: 'rgb(255, 255, 255)',
+                        display: false
+                    },
+                    grid: {
+                         color: 'rgb(51, 47, 59, 0)',
+                    },
+                }
+            }
+        },
+    };
+    const canvas =  Chart({
+        style,
+        width,
+        height,
+        data: chartData,
+    });
+    canvas.style.marginLeft = "-58px";
+    
+    return canvas
+}
+
+/**
+ * @example
+ *     getLatitudeLongitude({fallback: [0,0]})
+ *
+ * @param {[String]} arg1.fallback - description
+ * @returns {Promise} output - description
+ *
+ */
+function getLatitudeLongitude(arg) {
+    const {fallback} = (arg||{});
+    if (!navigator.geolocation) {
+        if (!fallback) {
+            throw Error(`unable to get location, it appears navigator.geolocation is not supported in the runtime`)
+        }
+        return Promise.resolve({ latitude: fallback[0], longitude: fallback[1] })
+    }
+    return new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(function(position) {
+            resolve(position.coords);
+        });
+    })
+}
+
+async function getWeather({latitude, longitude}) {
+    const generalInfo = await fetch(`https://api.weather.gov/points/${latitude},${longitude}`).then(res=>res.json());
+    var data = await fetch(generalInfo.properties.forecastHourly).then(res=>res.json());
+    return {...generalInfo.properties, ...data}
+    // {
+    //     "@context": [
+    //         "https://geojson.org/geojson-ld/geojson-context.jsonld",
+    //         {
+    //             "@version": "1.1",
+    //             wx: "https://api.weather.gov/ontology#",
+    //             s: "https://schema.org/",
+    //             geo: "http://www.opengis.net/ont/geosparql#",
+    //             unit: "http://codes.wmo.int/common/unit/",
+    //             "@vocab": "https://api.weather.gov/ontology#",
+    //             geometry: { "@id": "s:GeoCoordinates", "@type": "geo:wktLiteral" },
+    //             city: "s:addressLocality",
+    //             state: "s:addressRegion",
+    //             distance: { "@id": "s:Distance", "@type": "s:QuantitativeValue" },
+    //             bearing: { "@type": "s:QuantitativeValue" },
+    //             value: { "@id": "s:value" },
+    //             unitCode: { "@id": "s:unitCode", "@type": "@id" },
+    //             forecastOffice: { "@type": "@id" },
+    //             forecastGridData: { "@type": "@id" },
+    //             publicZone: { "@type": "@id" },
+    //             county: { "@type": "@id" }
+    //         }
+    //     ],
+    //     id: "https://api.weather.gov/points/30.615,-96.3379",
+    //     type: "Feature",
+    //     geometry: { type: "Point", coordinates: [ -96.3379, 30.615 ] },
+    //     properties: {
+    //         "@id": "https://api.weather.gov/points/30.615,-96.3379",
+    //         "@type": "wx:Point",
+    //         cwa: "HGX",
+    //         forecastOffice: "https://api.weather.gov/offices/HGX",
+    //         gridId: "HGX",
+    //         gridX: 28,
+    //         gridY: 134,
+    //         forecast: "https://api.weather.gov/gridpoints/HGX/28,134/forecast",
+    //         forecastHourly: "https://api.weather.gov/gridpoints/HGX/28,134/forecast/hourly",
+    //         forecastGridData: "https://api.weather.gov/gridpoints/HGX/28,134",
+    //         observationStations: "https://api.weather.gov/gridpoints/HGX/28,134/stations",
+    //         relativeLocation: {
+    //             type: "Feature",
+    //             geometry: { type: "Point", coordinates: [ -96.295153, 30.585379 ] },
+    //             properties: {
+    //                 city: "College Station",
+    //                 state: "TX",
+    //                 distance: { unitCode: "wmoUnit:m", value: 5252.3724475278 },
+    //                 bearing: { unitCode: "wmoUnit:degree_(angle)", value: 308 }
+    //             }
+    //         },
+    //         forecastZone: "https://api.weather.gov/zones/forecast/TXZ196",
+    //         county: "https://api.weather.gov/zones/county/TXC041",
+    //         fireWeatherZone: "https://api.weather.gov/zones/fire/TXZ196",
+    //         timeZone: "America/Chicago",
+    //         radarStation: "KGRK"
+    //     }
+    // }
+    
+    // data = {
+    //     "@context": [
+    //         "https://geojson.org/geojson-ld/geojson-context.jsonld",
+    //         {
+    //             "@version": "1.1",
+    //             wx: "https://api.weather.gov/ontology#",
+    //             geo: "http://www.opengis.net/ont/geosparql#",
+    //             unit: "http://codes.wmo.int/common/unit/",
+    //             "@vocab": "https://api.weather.gov/ontology#"
+    //         }
+    //     ],
+    //     type: "Feature",
+    //     geometry: {
+    //         type: "Polygon",
+    //         coordinates: [
+    //             [
+    //                 [ -96.3604098, 30.6180351 ],
+    //                 [ -96.3601449, 30.5953153 ],
+    //                 [ -96.33373909999999, 30.5955412 ],
+    //                 [ -96.33399879999999, 30.618261 ],
+    //                 [ -96.3604098, 30.6180351 ]
+    //             ]
+    //         ]
+    //     },
+    //     properties: {
+    //         updated: "2024-04-02T18:46:51+00:00",
+    //         units: "us",
+    //         forecastGenerator: "HourlyForecastGenerator",
+    //         generatedAt: "2024-04-02T19:04:59+00:00",
+    //         updateTime: "2024-04-02T18:46:51+00:00",
+    //         validTimes: "2024-04-02T12:00:00+00:00/P8DT1H",
+    //         elevation: { unitCode: "wmoUnit:m", value: 103.9368 },
+    //         periods: [
+    //             {
+    //                 number: 1,
+    //                 name: "",
+    //                 startTime: "2024-04-02T14:00:00-05:00",
+    //                 endTime: "2024-04-02T15:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 77,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 10.555555555555555 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 40 },
+    //                 windSpeed: "15 mph",
+    //                 windDirection: "NW",
+    //                 icon: "https://api.weather.gov/icons/land/day/few,0?size=small",
+    //                 shortForecast: "Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 2,
+    //                 name: "",
+    //                 startTime: "2024-04-02T15:00:00-05:00",
+    //                 endTime: "2024-04-02T16:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 77,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 10.555555555555555 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 40 },
+    //                 windSpeed: "15 mph",
+    //                 windDirection: "NW",
+    //                 icon: "https://api.weather.gov/icons/land/day/few,0?size=small",
+    //                 shortForecast: "Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 3,
+    //                 name: "",
+    //                 startTime: "2024-04-02T16:00:00-05:00",
+    //                 endTime: "2024-04-02T17:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 76,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 10.555555555555555 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 42 },
+    //                 windSpeed: "15 mph",
+    //                 windDirection: "NW",
+    //                 icon: "https://api.weather.gov/icons/land/day/few,0?size=small",
+    //                 shortForecast: "Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 4,
+    //                 name: "",
+    //                 startTime: "2024-04-02T17:00:00-05:00",
+    //                 endTime: "2024-04-02T18:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 73,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 9.444444444444445 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 43 },
+    //                 windSpeed: "15 mph",
+    //                 windDirection: "NW",
+    //                 icon: "https://api.weather.gov/icons/land/day/few,0?size=small",
+    //                 shortForecast: "Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 5,
+    //                 name: "",
+    //                 startTime: "2024-04-02T18:00:00-05:00",
+    //                 endTime: "2024-04-02T19:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 72,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 8.88888888888889 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 42 },
+    //                 windSpeed: "15 mph",
+    //                 windDirection: "NW",
+    //                 icon: "https://api.weather.gov/icons/land/night/few,0?size=small",
+    //                 shortForecast: "Mostly Clear",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 6,
+    //                 name: "",
+    //                 startTime: "2024-04-02T19:00:00-05:00",
+    //                 endTime: "2024-04-02T20:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 70,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 8.333333333333334 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 44 },
+    //                 windSpeed: "15 mph",
+    //                 windDirection: "NW",
+    //                 icon: "https://api.weather.gov/icons/land/night/few,0?size=small",
+    //                 shortForecast: "Mostly Clear",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 7,
+    //                 name: "",
+    //                 startTime: "2024-04-02T20:00:00-05:00",
+    //                 endTime: "2024-04-02T21:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 66,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 7.777777777777778 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 48 },
+    //                 windSpeed: "15 mph",
+    //                 windDirection: "NW",
+    //                 icon: "https://api.weather.gov/icons/land/night/few,0?size=small",
+    //                 shortForecast: "Mostly Clear",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 8,
+    //                 name: "",
+    //                 startTime: "2024-04-02T21:00:00-05:00",
+    //                 endTime: "2024-04-02T22:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 62,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 7.777777777777778 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 56 },
+    //                 windSpeed: "15 mph",
+    //                 windDirection: "NW",
+    //                 icon: "https://api.weather.gov/icons/land/night/few,0?size=small",
+    //                 shortForecast: "Mostly Clear",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 9,
+    //                 name: "",
+    //                 startTime: "2024-04-02T22:00:00-05:00",
+    //                 endTime: "2024-04-02T23:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 60,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 7.222222222222222 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 58 },
+    //                 windSpeed: "10 mph",
+    //                 windDirection: "N",
+    //                 icon: "https://api.weather.gov/icons/land/night/few,0?size=small",
+    //                 shortForecast: "Mostly Clear",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 10,
+    //                 name: "",
+    //                 startTime: "2024-04-02T23:00:00-05:00",
+    //                 endTime: "2024-04-03T00:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 58,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 6.666666666666667 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 59 },
+    //                 windSpeed: "10 mph",
+    //                 windDirection: "N",
+    //                 icon: "https://api.weather.gov/icons/land/night/few,0?size=small",
+    //                 shortForecast: "Mostly Clear",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 11,
+    //                 name: "",
+    //                 startTime: "2024-04-03T00:00:00-05:00",
+    //                 endTime: "2024-04-03T01:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 56,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 6.111111111111111 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 62 },
+    //                 windSpeed: "10 mph",
+    //                 windDirection: "N",
+    //                 icon: "https://api.weather.gov/icons/land/night/skc,0?size=small",
+    //                 shortForecast: "Clear",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 12,
+    //                 name: "",
+    //                 startTime: "2024-04-03T01:00:00-05:00",
+    //                 endTime: "2024-04-03T02:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 55,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 6.111111111111111 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 64 },
+    //                 windSpeed: "10 mph",
+    //                 windDirection: "N",
+    //                 icon: "https://api.weather.gov/icons/land/night/skc,0?size=small",
+    //                 shortForecast: "Clear",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 13,
+    //                 name: "",
+    //                 startTime: "2024-04-03T02:00:00-05:00",
+    //                 endTime: "2024-04-03T03:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 53,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 6.111111111111111 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 69 },
+    //                 windSpeed: "10 mph",
+    //                 windDirection: "N",
+    //                 icon: "https://api.weather.gov/icons/land/night/skc,0?size=small",
+    //                 shortForecast: "Clear",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 14,
+    //                 name: "",
+    //                 startTime: "2024-04-03T03:00:00-05:00",
+    //                 endTime: "2024-04-03T04:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 51,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 5.555555555555555 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 71 },
+    //                 windSpeed: "10 mph",
+    //                 windDirection: "N",
+    //                 icon: "https://api.weather.gov/icons/land/night/skc,0?size=small",
+    //                 shortForecast: "Clear",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 15,
+    //                 name: "",
+    //                 startTime: "2024-04-03T04:00:00-05:00",
+    //                 endTime: "2024-04-03T05:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 50,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 5.555555555555555 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 74 },
+    //                 windSpeed: "10 mph",
+    //                 windDirection: "NW",
+    //                 icon: "https://api.weather.gov/icons/land/night/skc,0?size=small",
+    //                 shortForecast: "Clear",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 16,
+    //                 name: "",
+    //                 startTime: "2024-04-03T05:00:00-05:00",
+    //                 endTime: "2024-04-03T06:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 48,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 5.555555555555555 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 80 },
+    //                 windSpeed: "5 mph",
+    //                 windDirection: "NW",
+    //                 icon: "https://api.weather.gov/icons/land/night/skc,0?size=small",
+    //                 shortForecast: "Clear",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 17,
+    //                 name: "",
+    //                 startTime: "2024-04-03T06:00:00-05:00",
+    //                 endTime: "2024-04-03T07:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 47,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 5 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 79 },
+    //                 windSpeed: "5 mph",
+    //                 windDirection: "NW",
+    //                 icon: "https://api.weather.gov/icons/land/day/skc,0?size=small",
+    //                 shortForecast: "Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 18,
+    //                 name: "",
+    //                 startTime: "2024-04-03T07:00:00-05:00",
+    //                 endTime: "2024-04-03T08:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 46,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 5.555555555555555 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 86 },
+    //                 windSpeed: "5 mph",
+    //                 windDirection: "W",
+    //                 icon: "https://api.weather.gov/icons/land/day/skc,0?size=small",
+    //                 shortForecast: "Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 19,
+    //                 name: "",
+    //                 startTime: "2024-04-03T08:00:00-05:00",
+    //                 endTime: "2024-04-03T09:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 47,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 5.555555555555555 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 83 },
+    //                 windSpeed: "5 mph",
+    //                 windDirection: "W",
+    //                 icon: "https://api.weather.gov/icons/land/day/skc,0?size=small",
+    //                 shortForecast: "Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 20,
+    //                 name: "",
+    //                 startTime: "2024-04-03T09:00:00-05:00",
+    //                 endTime: "2024-04-03T10:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 53,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 6.666666666666667 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 71 },
+    //                 windSpeed: "10 mph",
+    //                 windDirection: "W",
+    //                 icon: "https://api.weather.gov/icons/land/day/skc,0?size=small",
+    //                 shortForecast: "Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 21,
+    //                 name: "",
+    //                 startTime: "2024-04-03T10:00:00-05:00",
+    //                 endTime: "2024-04-03T11:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 59,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 7.222222222222222 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 60 },
+    //                 windSpeed: "10 mph",
+    //                 windDirection: "W",
+    //                 icon: "https://api.weather.gov/icons/land/day/skc,0?size=small",
+    //                 shortForecast: "Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 22,
+    //                 name: "",
+    //                 startTime: "2024-04-03T11:00:00-05:00",
+    //                 endTime: "2024-04-03T12:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 64,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 6.666666666666667 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 48 },
+    //                 windSpeed: "10 mph",
+    //                 windDirection: "W",
+    //                 icon: "https://api.weather.gov/icons/land/day/skc,0?size=small",
+    //                 shortForecast: "Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 23,
+    //                 name: "",
+    //                 startTime: "2024-04-03T12:00:00-05:00",
+    //                 endTime: "2024-04-03T13:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 67,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 5.555555555555555 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 40 },
+    //                 windSpeed: "10 mph",
+    //                 windDirection: "W",
+    //                 icon: "https://api.weather.gov/icons/land/day/skc,0?size=small",
+    //                 shortForecast: "Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 24,
+    //                 name: "",
+    //                 startTime: "2024-04-03T13:00:00-05:00",
+    //                 endTime: "2024-04-03T14:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 70,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 5.555555555555555 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 36 },
+    //                 windSpeed: "10 mph",
+    //                 windDirection: "W",
+    //                 icon: "https://api.weather.gov/icons/land/day/skc,0?size=small",
+    //                 shortForecast: "Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 25,
+    //                 name: "",
+    //                 startTime: "2024-04-03T14:00:00-05:00",
+    //                 endTime: "2024-04-03T15:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 72,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 5 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 33 },
+    //                 windSpeed: "15 mph",
+    //                 windDirection: "NW",
+    //                 icon: "https://api.weather.gov/icons/land/day/skc,0?size=small",
+    //                 shortForecast: "Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 26,
+    //                 name: "",
+    //                 startTime: "2024-04-03T15:00:00-05:00",
+    //                 endTime: "2024-04-03T16:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 74,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 5 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 30 },
+    //                 windSpeed: "15 mph",
+    //                 windDirection: "NW",
+    //                 icon: "https://api.weather.gov/icons/land/day/skc,0?size=small",
+    //                 shortForecast: "Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 27,
+    //                 name: "",
+    //                 startTime: "2024-04-03T16:00:00-05:00",
+    //                 endTime: "2024-04-03T17:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 75,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 5.555555555555555 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 31 },
+    //                 windSpeed: "15 mph",
+    //                 windDirection: "NW",
+    //                 icon: "https://api.weather.gov/icons/land/day/skc,0?size=small",
+    //                 shortForecast: "Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 28,
+    //                 name: "",
+    //                 startTime: "2024-04-03T17:00:00-05:00",
+    //                 endTime: "2024-04-03T18:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 75,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 6.111111111111111 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 32 },
+    //                 windSpeed: "10 mph",
+    //                 windDirection: "NW",
+    //                 icon: "https://api.weather.gov/icons/land/day/skc,0?size=small",
+    //                 shortForecast: "Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 29,
+    //                 name: "",
+    //                 startTime: "2024-04-03T18:00:00-05:00",
+    //                 endTime: "2024-04-03T19:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 74,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 6.666666666666667 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 34 },
+    //                 windSpeed: "10 mph",
+    //                 windDirection: "NW",
+    //                 icon: "https://api.weather.gov/icons/land/night/skc,0?size=small",
+    //                 shortForecast: "Clear",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 30,
+    //                 name: "",
+    //                 startTime: "2024-04-03T19:00:00-05:00",
+    //                 endTime: "2024-04-03T20:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 71,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 7.777777777777778 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 41 },
+    //                 windSpeed: "10 mph",
+    //                 windDirection: "N",
+    //                 icon: "https://api.weather.gov/icons/land/night/skc,0?size=small",
+    //                 shortForecast: "Clear",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 31,
+    //                 name: "",
+    //                 startTime: "2024-04-03T20:00:00-05:00",
+    //                 endTime: "2024-04-03T21:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 67,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 7.222222222222222 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 45 },
+    //                 windSpeed: "10 mph",
+    //                 windDirection: "N",
+    //                 icon: "https://api.weather.gov/icons/land/night/skc,0?size=small",
+    //                 shortForecast: "Clear",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 32,
+    //                 name: "",
+    //                 startTime: "2024-04-03T21:00:00-05:00",
+    //                 endTime: "2024-04-03T22:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 64,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 7.222222222222222 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 50 },
+    //                 windSpeed: "5 mph",
+    //                 windDirection: "N",
+    //                 icon: "https://api.weather.gov/icons/land/night/skc,0?size=small",
+    //                 shortForecast: "Clear",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 33,
+    //                 name: "",
+    //                 startTime: "2024-04-03T22:00:00-05:00",
+    //                 endTime: "2024-04-03T23:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 61,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 6.666666666666667 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 53 },
+    //                 windSpeed: "5 mph",
+    //                 windDirection: "N",
+    //                 icon: "https://api.weather.gov/icons/land/night/skc,0?size=small",
+    //                 shortForecast: "Clear",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 34,
+    //                 name: "",
+    //                 startTime: "2024-04-03T23:00:00-05:00",
+    //                 endTime: "2024-04-04T00:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 59,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 6.666666666666667 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 57 },
+    //                 windSpeed: "5 mph",
+    //                 windDirection: "N",
+    //                 icon: "https://api.weather.gov/icons/land/night/skc,0?size=small",
+    //                 shortForecast: "Clear",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 35,
+    //                 name: "",
+    //                 startTime: "2024-04-04T00:00:00-05:00",
+    //                 endTime: "2024-04-04T01:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 57,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 6.666666666666667 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 62 },
+    //                 windSpeed: "5 mph",
+    //                 windDirection: "W",
+    //                 icon: "https://api.weather.gov/icons/land/night/skc,0?size=small",
+    //                 shortForecast: "Clear",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 36,
+    //                 name: "",
+    //                 startTime: "2024-04-04T01:00:00-05:00",
+    //                 endTime: "2024-04-04T02:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 56,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 6.666666666666667 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 64 },
+    //                 windSpeed: "5 mph",
+    //                 windDirection: "SW",
+    //                 icon: "https://api.weather.gov/icons/land/night/skc,0?size=small",
+    //                 shortForecast: "Clear",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 37,
+    //                 name: "",
+    //                 startTime: "2024-04-04T02:00:00-05:00",
+    //                 endTime: "2024-04-04T03:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 54,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 6.666666666666667 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 69 },
+    //                 windSpeed: "5 mph",
+    //                 windDirection: "SW",
+    //                 icon: "https://api.weather.gov/icons/land/night/skc,0?size=small",
+    //                 shortForecast: "Clear",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 38,
+    //                 name: "",
+    //                 startTime: "2024-04-04T03:00:00-05:00",
+    //                 endTime: "2024-04-04T04:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 53,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 6.666666666666667 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 71 },
+    //                 windSpeed: "5 mph",
+    //                 windDirection: "SW",
+    //                 icon: "https://api.weather.gov/icons/land/night/skc,0?size=small",
+    //                 shortForecast: "Clear",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 39,
+    //                 name: "",
+    //                 startTime: "2024-04-04T04:00:00-05:00",
+    //                 endTime: "2024-04-04T05:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 52,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 6.111111111111111 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 71 },
+    //                 windSpeed: "5 mph",
+    //                 windDirection: "SW",
+    //                 icon: "https://api.weather.gov/icons/land/night/skc,0?size=small",
+    //                 shortForecast: "Clear",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 40,
+    //                 name: "",
+    //                 startTime: "2024-04-04T05:00:00-05:00",
+    //                 endTime: "2024-04-04T06:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 50,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 5.555555555555555 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 74 },
+    //                 windSpeed: "5 mph",
+    //                 windDirection: "SW",
+    //                 icon: "https://api.weather.gov/icons/land/night/skc,0?size=small",
+    //                 shortForecast: "Clear",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 41,
+    //                 name: "",
+    //                 startTime: "2024-04-04T06:00:00-05:00",
+    //                 endTime: "2024-04-04T07:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 49,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 5.555555555555555 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 77 },
+    //                 windSpeed: "5 mph",
+    //                 windDirection: "W",
+    //                 icon: "https://api.weather.gov/icons/land/day/skc,0?size=small",
+    //                 shortForecast: "Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 42,
+    //                 name: "",
+    //                 startTime: "2024-04-04T07:00:00-05:00",
+    //                 endTime: "2024-04-04T08:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 50,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 6.666666666666667 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 80 },
+    //                 windSpeed: "5 mph",
+    //                 windDirection: "W",
+    //                 icon: "https://api.weather.gov/icons/land/day/skc,0?size=small",
+    //                 shortForecast: "Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 43,
+    //                 name: "",
+    //                 startTime: "2024-04-04T08:00:00-05:00",
+    //                 endTime: "2024-04-04T09:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 53,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 7.222222222222222 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 74 },
+    //                 windSpeed: "5 mph",
+    //                 windDirection: "W",
+    //                 icon: "https://api.weather.gov/icons/land/day/skc,0?size=small",
+    //                 shortForecast: "Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 44,
+    //                 name: "",
+    //                 startTime: "2024-04-04T09:00:00-05:00",
+    //                 endTime: "2024-04-04T10:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 58,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 7.777777777777778 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 64 },
+    //                 windSpeed: "5 mph",
+    //                 windDirection: "W",
+    //                 icon: "https://api.weather.gov/icons/land/day/skc,0?size=small",
+    //                 shortForecast: "Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 45,
+    //                 name: "",
+    //                 startTime: "2024-04-04T10:00:00-05:00",
+    //                 endTime: "2024-04-04T11:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 63,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 8.333333333333334 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 56 },
+    //                 windSpeed: "5 mph",
+    //                 windDirection: "SW",
+    //                 icon: "https://api.weather.gov/icons/land/day/skc,0?size=small",
+    //                 shortForecast: "Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 46,
+    //                 name: "",
+    //                 startTime: "2024-04-04T11:00:00-05:00",
+    //                 endTime: "2024-04-04T12:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 68,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 8.333333333333334 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 47 },
+    //                 windSpeed: "5 mph",
+    //                 windDirection: "SW",
+    //                 icon: "https://api.weather.gov/icons/land/day/skc,0?size=small",
+    //                 shortForecast: "Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 47,
+    //                 name: "",
+    //                 startTime: "2024-04-04T12:00:00-05:00",
+    //                 endTime: "2024-04-04T13:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 72,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 8.333333333333334 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 40 },
+    //                 windSpeed: "5 mph",
+    //                 windDirection: "W",
+    //                 icon: "https://api.weather.gov/icons/land/day/skc,0?size=small",
+    //                 shortForecast: "Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 48,
+    //                 name: "",
+    //                 startTime: "2024-04-04T13:00:00-05:00",
+    //                 endTime: "2024-04-04T14:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 76,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 8.333333333333334 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 36 },
+    //                 windSpeed: "5 mph",
+    //                 windDirection: "W",
+    //                 icon: "https://api.weather.gov/icons/land/day/skc,0?size=small",
+    //                 shortForecast: "Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 49,
+    //                 name: "",
+    //                 startTime: "2024-04-04T14:00:00-05:00",
+    //                 endTime: "2024-04-04T15:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 78,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 7.777777777777778 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 32 },
+    //                 windSpeed: "5 mph",
+    //                 windDirection: "W",
+    //                 icon: "https://api.weather.gov/icons/land/day/skc,0?size=small",
+    //                 shortForecast: "Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 50,
+    //                 name: "",
+    //                 startTime: "2024-04-04T15:00:00-05:00",
+    //                 endTime: "2024-04-04T16:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 80,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 7.222222222222222 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 29 },
+    //                 windSpeed: "10 mph",
+    //                 windDirection: "NW",
+    //                 icon: "https://api.weather.gov/icons/land/day/skc,0?size=small",
+    //                 shortForecast: "Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 51,
+    //                 name: "",
+    //                 startTime: "2024-04-04T16:00:00-05:00",
+    //                 endTime: "2024-04-04T17:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 80,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 7.777777777777778 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 30 },
+    //                 windSpeed: "5 mph",
+    //                 windDirection: "NW",
+    //                 icon: "https://api.weather.gov/icons/land/day/skc,0?size=small",
+    //                 shortForecast: "Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 52,
+    //                 name: "",
+    //                 startTime: "2024-04-04T17:00:00-05:00",
+    //                 endTime: "2024-04-04T18:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 80,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 8.88888888888889 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 32 },
+    //                 windSpeed: "5 mph",
+    //                 windDirection: "NW",
+    //                 icon: "https://api.weather.gov/icons/land/day/skc,0?size=small",
+    //                 shortForecast: "Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 53,
+    //                 name: "",
+    //                 startTime: "2024-04-04T18:00:00-05:00",
+    //                 endTime: "2024-04-04T19:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 80,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 10.555555555555555 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 37 },
+    //                 windSpeed: "5 mph",
+    //                 windDirection: "NE",
+    //                 icon: "https://api.weather.gov/icons/land/night/skc,0?size=small",
+    //                 shortForecast: "Clear",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 54,
+    //                 name: "",
+    //                 startTime: "2024-04-04T19:00:00-05:00",
+    //                 endTime: "2024-04-04T20:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 78,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 11.666666666666666 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 42 },
+    //                 windSpeed: "5 mph",
+    //                 windDirection: "E",
+    //                 icon: "https://api.weather.gov/icons/land/night/skc,0?size=small",
+    //                 shortForecast: "Clear",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 55,
+    //                 name: "",
+    //                 startTime: "2024-04-04T20:00:00-05:00",
+    //                 endTime: "2024-04-04T21:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 74,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 11.666666666666666 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 47 },
+    //                 windSpeed: "5 mph",
+    //                 windDirection: "E",
+    //                 icon: "https://api.weather.gov/icons/land/night/skc,0?size=small",
+    //                 shortForecast: "Clear",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 56,
+    //                 name: "",
+    //                 startTime: "2024-04-04T21:00:00-05:00",
+    //                 endTime: "2024-04-04T22:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 70,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 11.11111111111111 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 53 },
+    //                 windSpeed: "5 mph",
+    //                 windDirection: "E",
+    //                 icon: "https://api.weather.gov/icons/land/night/skc,0?size=small",
+    //                 shortForecast: "Clear",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 57,
+    //                 name: "",
+    //                 startTime: "2024-04-04T22:00:00-05:00",
+    //                 endTime: "2024-04-04T23:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 66,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 10.555555555555555 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 58 },
+    //                 windSpeed: "5 mph",
+    //                 windDirection: "E",
+    //                 icon: "https://api.weather.gov/icons/land/night/skc,0?size=small",
+    //                 shortForecast: "Clear",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 58,
+    //                 name: "",
+    //                 startTime: "2024-04-04T23:00:00-05:00",
+    //                 endTime: "2024-04-05T00:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 64,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 10 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 61 },
+    //                 windSpeed: "5 mph",
+    //                 windDirection: "SE",
+    //                 icon: "https://api.weather.gov/icons/land/night/skc,0?size=small",
+    //                 shortForecast: "Clear",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 59,
+    //                 name: "",
+    //                 startTime: "2024-04-05T00:00:00-05:00",
+    //                 endTime: "2024-04-05T01:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 62,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 10 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 64 },
+    //                 windSpeed: "5 mph",
+    //                 windDirection: "SE",
+    //                 icon: "https://api.weather.gov/icons/land/night/skc,0?size=small",
+    //                 shortForecast: "Clear",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 60,
+    //                 name: "",
+    //                 startTime: "2024-04-05T01:00:00-05:00",
+    //                 endTime: "2024-04-05T02:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 61,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 10 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 67 },
+    //                 windSpeed: "5 mph",
+    //                 windDirection: "SE",
+    //                 icon: "https://api.weather.gov/icons/land/night/skc,0?size=small",
+    //                 shortForecast: "Clear",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 61,
+    //                 name: "",
+    //                 startTime: "2024-04-05T02:00:00-05:00",
+    //                 endTime: "2024-04-05T03:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 59,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 10 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 72 },
+    //                 windSpeed: "5 mph",
+    //                 windDirection: "SE",
+    //                 icon: "https://api.weather.gov/icons/land/night/skc,0?size=small",
+    //                 shortForecast: "Clear",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 62,
+    //                 name: "",
+    //                 startTime: "2024-04-05T03:00:00-05:00",
+    //                 endTime: "2024-04-05T04:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 57,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 9.444444444444445 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 75 },
+    //                 windSpeed: "5 mph",
+    //                 windDirection: "SE",
+    //                 icon: "https://api.weather.gov/icons/land/night/skc,0?size=small",
+    //                 shortForecast: "Clear",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 63,
+    //                 name: "",
+    //                 startTime: "2024-04-05T04:00:00-05:00",
+    //                 endTime: "2024-04-05T05:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 55,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 8.88888888888889 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 77 },
+    //                 windSpeed: "5 mph",
+    //                 windDirection: "SE",
+    //                 icon: "https://api.weather.gov/icons/land/night/skc,0?size=small",
+    //                 shortForecast: "Clear",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 64,
+    //                 name: "",
+    //                 startTime: "2024-04-05T05:00:00-05:00",
+    //                 endTime: "2024-04-05T06:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 53,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 8.88888888888889 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 82 },
+    //                 windSpeed: "5 mph",
+    //                 windDirection: "SE",
+    //                 icon: "https://api.weather.gov/icons/land/night/skc,0?size=small",
+    //                 shortForecast: "Clear",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 65,
+    //                 name: "",
+    //                 startTime: "2024-04-05T06:00:00-05:00",
+    //                 endTime: "2024-04-05T07:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 52,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 8.88888888888889 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 85 },
+    //                 windSpeed: "5 mph",
+    //                 windDirection: "SE",
+    //                 icon: "https://api.weather.gov/icons/land/day/skc,0?size=small",
+    //                 shortForecast: "Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 66,
+    //                 name: "",
+    //                 startTime: "2024-04-05T07:00:00-05:00",
+    //                 endTime: "2024-04-05T08:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 53,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 8.88888888888889 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 83 },
+    //                 windSpeed: "5 mph",
+    //                 windDirection: "SE",
+    //                 icon: "https://api.weather.gov/icons/land/day/skc,0?size=small",
+    //                 shortForecast: "Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 67,
+    //                 name: "",
+    //                 startTime: "2024-04-05T08:00:00-05:00",
+    //                 endTime: "2024-04-05T09:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 56,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 8.88888888888889 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 75 },
+    //                 windSpeed: "5 mph",
+    //                 windDirection: "SE",
+    //                 icon: "https://api.weather.gov/icons/land/day/skc,0?size=small",
+    //                 shortForecast: "Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 68,
+    //                 name: "",
+    //                 startTime: "2024-04-05T09:00:00-05:00",
+    //                 endTime: "2024-04-05T10:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 60,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 8.88888888888889 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 64 },
+    //                 windSpeed: "5 mph",
+    //                 windDirection: "SE",
+    //                 icon: "https://api.weather.gov/icons/land/day/skc,0?size=small",
+    //                 shortForecast: "Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 69,
+    //                 name: "",
+    //                 startTime: "2024-04-05T10:00:00-05:00",
+    //                 endTime: "2024-04-05T11:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 65,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 8.88888888888889 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 54 },
+    //                 windSpeed: "10 mph",
+    //                 windDirection: "SE",
+    //                 icon: "https://api.weather.gov/icons/land/day/skc,0?size=small",
+    //                 shortForecast: "Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 70,
+    //                 name: "",
+    //                 startTime: "2024-04-05T11:00:00-05:00",
+    //                 endTime: "2024-04-05T12:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 69,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 9.444444444444445 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 48 },
+    //                 windSpeed: "5 mph",
+    //                 windDirection: "S",
+    //                 icon: "https://api.weather.gov/icons/land/day/skc,0?size=small",
+    //                 shortForecast: "Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 71,
+    //                 name: "",
+    //                 startTime: "2024-04-05T12:00:00-05:00",
+    //                 endTime: "2024-04-05T13:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 74,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 9.444444444444445 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 42 },
+    //                 windSpeed: "5 mph",
+    //                 windDirection: "S",
+    //                 icon: "https://api.weather.gov/icons/land/day/few,0?size=small",
+    //                 shortForecast: "Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 72,
+    //                 name: "",
+    //                 startTime: "2024-04-05T13:00:00-05:00",
+    //                 endTime: "2024-04-05T14:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 77,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 10 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 39 },
+    //                 windSpeed: "10 mph",
+    //                 windDirection: "S",
+    //                 icon: "https://api.weather.gov/icons/land/day/few,0?size=small",
+    //                 shortForecast: "Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 73,
+    //                 name: "",
+    //                 startTime: "2024-04-05T14:00:00-05:00",
+    //                 endTime: "2024-04-05T15:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 79,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 10.555555555555555 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 37 },
+    //                 windSpeed: "10 mph",
+    //                 windDirection: "S",
+    //                 icon: "https://api.weather.gov/icons/land/day/few,0?size=small",
+    //                 shortForecast: "Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 74,
+    //                 name: "",
+    //                 startTime: "2024-04-05T15:00:00-05:00",
+    //                 endTime: "2024-04-05T16:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 81,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 10.555555555555555 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 36 },
+    //                 windSpeed: "10 mph",
+    //                 windDirection: "S",
+    //                 icon: "https://api.weather.gov/icons/land/day/few,0?size=small",
+    //                 shortForecast: "Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 75,
+    //                 name: "",
+    //                 startTime: "2024-04-05T16:00:00-05:00",
+    //                 endTime: "2024-04-05T17:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 81,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 11.11111111111111 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 37 },
+    //                 windSpeed: "10 mph",
+    //                 windDirection: "S",
+    //                 icon: "https://api.weather.gov/icons/land/day/few,0?size=small",
+    //                 shortForecast: "Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 76,
+    //                 name: "",
+    //                 startTime: "2024-04-05T17:00:00-05:00",
+    //                 endTime: "2024-04-05T18:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 81,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 11.666666666666666 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 38 },
+    //                 windSpeed: "10 mph",
+    //                 windDirection: "S",
+    //                 icon: "https://api.weather.gov/icons/land/day/few,0?size=small",
+    //                 shortForecast: "Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 77,
+    //                 name: "",
+    //                 startTime: "2024-04-05T18:00:00-05:00",
+    //                 endTime: "2024-04-05T19:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 81,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 12.222222222222221 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 40 },
+    //                 windSpeed: "10 mph",
+    //                 windDirection: "SE",
+    //                 icon: "https://api.weather.gov/icons/land/night/few,0?size=small",
+    //                 shortForecast: "Mostly Clear",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 78,
+    //                 name: "",
+    //                 startTime: "2024-04-05T19:00:00-05:00",
+    //                 endTime: "2024-04-05T20:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 79,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 12.777777777777779 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 44 },
+    //                 windSpeed: "10 mph",
+    //                 windDirection: "SE",
+    //                 icon: "https://api.weather.gov/icons/land/night/sct,0?size=small",
+    //                 shortForecast: "Partly Cloudy",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 79,
+    //                 name: "",
+    //                 startTime: "2024-04-05T20:00:00-05:00",
+    //                 endTime: "2024-04-05T21:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 76,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 12.777777777777779 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 49 },
+    //                 windSpeed: "10 mph",
+    //                 windDirection: "SE",
+    //                 icon: "https://api.weather.gov/icons/land/night/sct,0?size=small",
+    //                 shortForecast: "Partly Cloudy",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 80,
+    //                 name: "",
+    //                 startTime: "2024-04-05T21:00:00-05:00",
+    //                 endTime: "2024-04-05T22:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 72,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 12.777777777777779 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 56 },
+    //                 windSpeed: "10 mph",
+    //                 windDirection: "S",
+    //                 icon: "https://api.weather.gov/icons/land/night/sct,0?size=small",
+    //                 shortForecast: "Partly Cloudy",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 81,
+    //                 name: "",
+    //                 startTime: "2024-04-05T22:00:00-05:00",
+    //                 endTime: "2024-04-05T23:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 68,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 12.222222222222221 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 61 },
+    //                 windSpeed: "10 mph",
+    //                 windDirection: "S",
+    //                 icon: "https://api.weather.gov/icons/land/night/sct,0?size=small",
+    //                 shortForecast: "Partly Cloudy",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 82,
+    //                 name: "",
+    //                 startTime: "2024-04-05T23:00:00-05:00",
+    //                 endTime: "2024-04-06T00:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 66,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 12.222222222222221 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 65 },
+    //                 windSpeed: "10 mph",
+    //                 windDirection: "S",
+    //                 icon: "https://api.weather.gov/icons/land/night/sct,0?size=small",
+    //                 shortForecast: "Partly Cloudy",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 83,
+    //                 name: "",
+    //                 startTime: "2024-04-06T00:00:00-05:00",
+    //                 endTime: "2024-04-06T01:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 65,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 12.777777777777779 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 70 },
+    //                 windSpeed: "10 mph",
+    //                 windDirection: "S",
+    //                 icon: "https://api.weather.gov/icons/land/night/sct,0?size=small",
+    //                 shortForecast: "Partly Cloudy",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 84,
+    //                 name: "",
+    //                 startTime: "2024-04-06T01:00:00-05:00",
+    //                 endTime: "2024-04-06T02:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 64,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 12.777777777777779 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 73 },
+    //                 windSpeed: "10 mph",
+    //                 windDirection: "S",
+    //                 icon: "https://api.weather.gov/icons/land/night/sct,0?size=small",
+    //                 shortForecast: "Partly Cloudy",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 85,
+    //                 name: "",
+    //                 startTime: "2024-04-06T02:00:00-05:00",
+    //                 endTime: "2024-04-06T03:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 63,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 13.333333333333334 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 78 },
+    //                 windSpeed: "10 mph",
+    //                 windDirection: "S",
+    //                 icon: "https://api.weather.gov/icons/land/night/sct,0?size=small",
+    //                 shortForecast: "Partly Cloudy",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 86,
+    //                 name: "",
+    //                 startTime: "2024-04-06T03:00:00-05:00",
+    //                 endTime: "2024-04-06T04:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 62,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 13.333333333333334 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 81 },
+    //                 windSpeed: "10 mph",
+    //                 windDirection: "S",
+    //                 icon: "https://api.weather.gov/icons/land/night/sct,0?size=small",
+    //                 shortForecast: "Partly Cloudy",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 87,
+    //                 name: "",
+    //                 startTime: "2024-04-06T04:00:00-05:00",
+    //                 endTime: "2024-04-06T05:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 61,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 13.88888888888889 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 87 },
+    //                 windSpeed: "10 mph",
+    //                 windDirection: "SE",
+    //                 icon: "https://api.weather.gov/icons/land/night/bkn,0?size=small",
+    //                 shortForecast: "Mostly Cloudy",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 88,
+    //                 name: "",
+    //                 startTime: "2024-04-06T05:00:00-05:00",
+    //                 endTime: "2024-04-06T06:00:00-05:00",
+    //                 isDaytime: false,
+    //                 temperature: 60,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 14.444444444444445 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 93 },
+    //                 windSpeed: "10 mph",
+    //                 windDirection: "SE",
+    //                 icon: "https://api.weather.gov/icons/land/night/bkn,0?size=small",
+    //                 shortForecast: "Mostly Cloudy",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 89,
+    //                 name: "",
+    //                 startTime: "2024-04-06T06:00:00-05:00",
+    //                 endTime: "2024-04-06T07:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 59,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 14.444444444444445 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 95 },
+    //                 windSpeed: "10 mph",
+    //                 windDirection: "SE",
+    //                 icon: "https://api.weather.gov/icons/land/day/bkn,0?size=small",
+    //                 shortForecast: "Partly Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 90,
+    //                 name: "",
+    //                 startTime: "2024-04-06T07:00:00-05:00",
+    //                 endTime: "2024-04-06T08:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 60,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 15 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 96 },
+    //                 windSpeed: "10 mph",
+    //                 windDirection: "SE",
+    //                 icon: "https://api.weather.gov/icons/land/day/bkn,0?size=small",
+    //                 shortForecast: "Partly Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 91,
+    //                 name: "",
+    //                 startTime: "2024-04-06T08:00:00-05:00",
+    //                 endTime: "2024-04-06T09:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 62,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 15 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 89 },
+    //                 windSpeed: "15 mph",
+    //                 windDirection: "SE",
+    //                 icon: "https://api.weather.gov/icons/land/day/bkn,0?size=small",
+    //                 shortForecast: "Partly Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 92,
+    //                 name: "",
+    //                 startTime: "2024-04-06T09:00:00-05:00",
+    //                 endTime: "2024-04-06T10:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 66,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 15 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 79 },
+    //                 windSpeed: "15 mph",
+    //                 windDirection: "SE",
+    //                 icon: "https://api.weather.gov/icons/land/day/bkn,0?size=small",
+    //                 shortForecast: "Partly Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 93,
+    //                 name: "",
+    //                 startTime: "2024-04-06T10:00:00-05:00",
+    //                 endTime: "2024-04-06T11:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 69,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 15 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 70 },
+    //                 windSpeed: "15 mph",
+    //                 windDirection: "SE",
+    //                 icon: "https://api.weather.gov/icons/land/day/bkn,0?size=small",
+    //                 shortForecast: "Partly Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 94,
+    //                 name: "",
+    //                 startTime: "2024-04-06T11:00:00-05:00",
+    //                 endTime: "2024-04-06T12:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 72,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 15 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 63 },
+    //                 windSpeed: "20 mph",
+    //                 windDirection: "S",
+    //                 icon: "https://api.weather.gov/icons/land/day/bkn,0?size=small",
+    //                 shortForecast: "Partly Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 95,
+    //                 name: "",
+    //                 startTime: "2024-04-06T12:00:00-05:00",
+    //                 endTime: "2024-04-06T13:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 75,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 15 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 58 },
+    //                 windSpeed: "20 mph",
+    //                 windDirection: "S",
+    //                 icon: "https://api.weather.gov/icons/land/day/bkn,0?size=small",
+    //                 shortForecast: "Partly Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 96,
+    //                 name: "",
+    //                 startTime: "2024-04-06T13:00:00-05:00",
+    //                 endTime: "2024-04-06T14:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 77,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 15 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 54 },
+    //                 windSpeed: "20 mph",
+    //                 windDirection: "S",
+    //                 icon: "https://api.weather.gov/icons/land/day/bkn,0?size=small",
+    //                 shortForecast: "Partly Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 97,
+    //                 name: "",
+    //                 startTime: "2024-04-06T14:00:00-05:00",
+    //                 endTime: "2024-04-06T15:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 78,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 14.444444444444445 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 49 },
+    //                 windSpeed: "20 mph",
+    //                 windDirection: "S",
+    //                 icon: "https://api.weather.gov/icons/land/day/bkn,0?size=small",
+    //                 shortForecast: "Partly Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 98,
+    //                 name: "",
+    //                 startTime: "2024-04-06T15:00:00-05:00",
+    //                 endTime: "2024-04-06T16:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 79,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 14.444444444444445 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 48 },
+    //                 windSpeed: "20 mph",
+    //                 windDirection: "S",
+    //                 icon: "https://api.weather.gov/icons/land/day/bkn,0?size=small",
+    //                 shortForecast: "Partly Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 99,
+    //                 name: "",
+    //                 startTime: "2024-04-06T16:00:00-05:00",
+    //                 endTime: "2024-04-06T17:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 79,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 14.444444444444445 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 49 },
+    //                 windSpeed: "20 mph",
+    //                 windDirection: "S",
+    //                 icon: "https://api.weather.gov/icons/land/day/bkn,0?size=small",
+    //                 shortForecast: "Partly Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             {
+    //                 number: 100,
+    //                 name: "",
+    //                 startTime: "2024-04-06T17:00:00-05:00",
+    //                 endTime: "2024-04-06T18:00:00-05:00",
+    //                 isDaytime: true,
+    //                 temperature: 78,
+    //                 temperatureUnit: "F",
+    //                 temperatureTrend: null,
+    //                 probabilityOfPrecipitation: { unitCode: "wmoUnit:percent", value: 0 },
+    //                 dewpoint: { unitCode: "wmoUnit:degC", value: 15 },
+    //                 relativeHumidity: { unitCode: "wmoUnit:percent", value: 52 },
+    //                 windSpeed: "20 mph",
+    //                 windDirection: "S",
+    //                 icon: "https://api.weather.gov/icons/land/day/bkn,0?size=small",
+    //                 shortForecast: "Partly Sunny",
+    //                 detailedForecast: ""
+    //             },
+    //             ... 56 more items
+    //         ]
+    //     }
+    // }
+}
+
+window.wrapAroundGet = wrapAroundGet;
+
+const { html } = Elemental({
+    ...components,
+    HourlyTimeline,
+});
+
+const weatherData = await getLatitudeLongitude().then(getWeather);
+window.weatherData = weatherData;
+const hourlyData = weatherData?.properties?.periods;
+
+var todayLimit = (new DateTime()).add({days:1}).unix;
+var todaysHourlyData = hourlyData.filter(each => (new DateTime(each.startTime)).unix<todayLimit);
+var otherHourlyData = hourlyData.filter(each => (new DateTime(each.startTime)).unix>=todayLimit);
+// pink color
+
+const colors = ["rgba(24,52,126,1)","rgba(24,52,126,1)","rgba(24,52,126,1)","rgba(24,52,126,1)","#5b73df", "#897ed3","#cf5c5c","#c19b4a","#498ada","#208ea2","#64b3d9","#64b3d9","#64b3d9","#64b3d9","#64b3d9","#64b3d9","#c19b4a","#cf5c5c","#897ed3","rgba(24,52,126,1)","rgba(24,52,126,1)","rgba(24,52,126,1)","rgba(24,52,126,1)","rgba(24,52,126,1)",];
+let nextColors = [];
+let index = -1;
+for (const each of colors) {
+    nextColors.push(
+        wrapAroundGet((new Date().getHours())+index, colors)
+    );
+    index+=1;
+}
+document.body = html`
+    <body
+        font-size=15px
+        background-color=whitesmoke
+        overflow=scroll
+        width=100vw
+        display="flex"
+        alignItems="center"
+        flexDirection="column"
+        transition="background 360s ease-in-out"
+        class="stage"
+        >
+        <style>
+            body {
+                margin: 0;
+            }
+            .stage {
+                animation: animateBg 86400s linear infinite;
+                background-image: linear-gradient(201deg,${nextColors.join(",")});
+                background-size: 100% 1500%;
+                height: 100vh;
+                width: 100vw;
+            }
+            @keyframes animateBg {
+                0% { background-position: 0% 0%; }
+                100% { background-position: 0% 100%; }
+            }
+        </style>
+            ${html`<Column width="fill-available" flex-grow=1 align-items="center" horizontalAlignment="center" height=200vh>
+                <Row flex-grow=1 style="width: 55rem; max-width: calc(90vw - 1rem); margin: 2rem; background-color: rgba(255,255,255,0.2); box-sizing: content-box; padding: 1rem; border-radius: 0.5rem; box-shadow: 0 4px 5px 0 rgba(0,0,0,0.10),0 1px 10px 0 rgba(0,0,0,0.08),0 2px 4px -1px rgba(0,0,0,0.24);" verticalAlignment="center" horizontalAlignment="center" overflow="hidden" position="relative" max-height=30rem>
+                    <HourlyTimeline periods=${todaysHourlyData} width=500px height=300px  showDayNames=${false}/>
+                </Row>
+                <Row flex-grow=1 style="width: 55rem; max-width: calc(90vw - 1rem); margin: 2rem; background-color: rgba(255,255,255,0.2); box-sizing: content-box; padding: 1rem; border-radius: 0.5rem; box-shadow: 0 4px 5px 0 rgba(0,0,0,0.10),0 1px 10px 0 rgba(0,0,0,0.08),0 2px 4px -1px rgba(0,0,0,0.24);" verticalAlignment="center" horizontalAlignment="center" overflow="hidden" position="relative" max-height=30rem>
+                    <HourlyTimeline periods=${otherHourlyData} width=500px height=300px  />
+                </Row>
+            </Column>`}
+    </body>
+`;
+// setTimeout(()=>{
+//     column.style.alignItems = "center"
+// }, 1000)
+
+  </script>
+</head>
+<!--                                   -->
+<!-- Synchonous/Fast loading animation -->
+<!--                                   -->
+    <body>
+        <div style="display: flex;justify-content: center;align-items: center;height: 100vh;">
+            <div style="width: 50px;height: 50px;border: 10px solid #dddddd;border-top-color: #009579;border-radius: 50%;transform: rotate(0.16turn);" id="good-component--initial-loader">
+            </div>
+        </div>
+    </body>
+    <script>
+        const animateLoader = ()=>{
+            const element = document.getElementById("good-component--initial-loader")
+            element && element.animate(
+                [
+                    { transform: 'rotate(0turn)' },
+                    { transform: 'rotate(1turn)' },
+                ],
+                {
+                    duration: 1000,
+                    iterations: Infinity,
+                    easing: 'ease',
+                },
+            )
+        }
+        document.body ? animateLoader() : document.addEventListener("DOMContentLoaded", animateLoader)
+    </script>
