@@ -1,6 +1,6 @@
 import { Chart } from "../generic_tooling/charts.js"
 // import DateTime from "https://deno.land/x/good@1.6.1.3/date.js"
-import { DateTime, zip } from "../imports.js"
+import { DateTime } from "../imports.js"
 
 export function HourlyTimeline({periods, style, width, height, showDayNames=true}) {
     var hourlyData = periods
@@ -50,8 +50,25 @@ export function HourlyTimeline({periods, style, width, height, showDayNames=true
     var startHours = startTimes.map(each => `${each.hour12}${each.amPm}`)
     var hasPassedPm = false
     var passedFirstDay = false
-    var labels = startTimes.map(each => each.unix)
-    
+    var labels = []
+    // for (const each of startTimes) {
+    //     let label = `${each.hour12}${each.amPm}`
+    //     if (each.amPm=="pm") {
+    //         hasPassedPm = true
+    //     }
+    //     if (hasPassedPm && each.amPm=="am") {
+    //         passedFirstDay = true
+    //     }
+    //     if (passedFirstDay) {
+    //         label = `${each.weekDayShort} ${each.hour12}${each.amPm}`
+    //     }
+    //     labels.push(label)
+    // }
+    if (showDayNames) {
+        labels = startTimes.map(each => `${each.weekDayShort} ${each.hour12}${each.amPm}`)
+    } else {
+        labels = startTimes.map(each => `${each.hour12}${each.amPm}`)
+    }
     let accumulator = 0
     var chartData = {
         type: 'line',
@@ -65,7 +82,7 @@ export function HourlyTimeline({periods, style, width, height, showDayNames=true
                     borderColor: 'rgb(255, 99, 132)',
                     backgroundColor: 'rgba(255, 99, 132, 0.2)',
                     radius: 2,
-                    fill: false,
+                    fill: false
                 },
                 {
                     label: 'Risk of Rain (%)',
@@ -130,27 +147,17 @@ export function HourlyTimeline({periods, style, width, height, showDayNames=true
             scales: {
                 x: {
                     grid: {
-                        // display: true,
+                        // display: false,
                         // drawOnChartArea: false,
                         // drawTicks: false,
-                        color: 'rgb(255, 255, 255, 0.3)',
+                        color: 'rgb(51, 47, 59, 0)',
                     },
-                    color: 'rgb(255, 255, 255)',
                     ticks: {
-                        callback: function(val, index, ...args) {
-                            if (index % 2 === 0) {
-                                val = new DateTime(labels[index])
-                                // val = val)
-                                if (showDayNames) {
-                                    return `${val.weekDayShort} ${val.hour12}${val.amPm}`
-                                } else {
-                                    return `${val.hour12}${val.amPm}`
-                                }
-                            } else {
-                                return ''
-                            }
-                        },
                         color: 'rgb(255, 255, 255)',
+                        callback: function(val, index) {
+                            // Hide every 2nd tick label
+                            return index % 2 === 0 ? this.getLabelForValue(val) : '';
+                        },
                         font: {
                             size: 14
                         },
