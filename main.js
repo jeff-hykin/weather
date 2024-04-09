@@ -19,7 +19,7 @@ import router from "./generic_tooling/router.js"
 
 window.router = router
 let weatherData
-if (window.location.pathname == "/weather/widget") {
+if (window.location.pathname == "/weather/widget/") {
     document.body = html`<body style="display: flex; flex-direction: column; height: 100vh;">
         <iframe src="https://jeff-hykin.github.io/countdown/" style="width: 60vw; height: 100%;"></iframe>
         <iframe src="https://jeff-hykin.github.io/weather/" style="width: 40vw; height: 100%;"></iframe>
