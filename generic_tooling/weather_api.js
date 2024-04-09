@@ -1,4 +1,5 @@
-export async function getWeather({latitude, longitude}) {
+export async function getWeather(val) {
+    const {latitude, longitude} = {latitude:30.615, longitude:-96.3379, ...val}
     const generalInfo = await fetch(`https://api.weather.gov/points/${latitude},${longitude}`).then(res=>res.json())
     var data = await fetch(generalInfo.properties.forecastHourly).then(res=>res.json())
     return {...generalInfo.properties, ...data}
