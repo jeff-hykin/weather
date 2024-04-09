@@ -19,13 +19,14 @@ import router from "./generic_tooling/router.js"
 
 window.router = router
 let weatherData
-const otherInfo = window.location.href.slice(window.location.origin.length)
+// reload the page once an hour
 if (otherInfo == "/weather/?widget") {
     document.body = html`<body style="display: flex; flex-direction: column; height: 100vh;">
-        <iframe src="https://jeff-hykin.github.io/countdown/" style="width: 60vw; height: 100%;"></iframe>
-        <iframe src="https://jeff-hykin.github.io/weather/" style="width: 40vw; height: 100%;"></iframe>
-    </body>`
+        <iframe src="https://jeff-hykin.github.io/countdown/" style="width: 60vw; height: 100vh;"></iframe>
+        <iframe src="https://jeff-hykin.github.io/weather/" style="width: 40vw; height: 100vh;"></iframe>
+    </body>`;
 } else {
+    setTimeout(() => {window.location.reload()}, 1000*60*60)
     if (router.pageInfo.longitude&&router.pageInfo.latitude) {
         weatherData = await getWeather({latitude:router.pageInfo.latitude, longitude:router.pageInfo.longitude})
     } else {
