@@ -7036,7 +7036,7 @@ const otherInfo = window.location.href.slice(window.location.origin.length)
 if (otherInfo == "/weather/?widget") {
     document.body = html`<body style="display: flex; flex-direction: column; height: 100vh;">
         <iframe src="https://jeff-hykin.github.io/countdown/" style="width: 60vw; height: 100vh;"></iframe>
-        <iframe src="https://jeff-hykin.github.io/weather/" style="width: 40vw; height: 100vh;"></iframe>
+        <iframe src="https://jeff-hykin.github.io/weather/?_={&quot;latitude&quot;%3A30.608993339249324%2C&quot;longitude&quot;%3A-96.31869570182387}" style="width: 40vw; height: 100vh;"></iframe>
     </body>`;
 } else {
     setTimeout(() => {window.location.reload()}, 1000*60*60)
