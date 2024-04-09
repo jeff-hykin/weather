@@ -7032,6 +7032,7 @@ const { html } = Elemental({
 window.router = main_default;
 let weatherData;
 const otherInfo = window.location.href.slice(window.location.origin.length)
+console.debug(`otherInfo is:`,otherInfo)
 if (otherInfo == "/weather/?widget") {
     document.body = html`<body style="display: flex; flex-direction: column; height: 100vh;">
         <iframe src="https://jeff-hykin.github.io/countdown/" style="width: 60vw; height: 100%;"></iframe>
