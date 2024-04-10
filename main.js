@@ -21,7 +21,7 @@ window.router = router
 let weatherData
 // reload the page once an hour
 if (otherInfo == "/weather/?widget") {
-    document.body = html`<body style="display: flex; flex-direction: column; height: 100vh;">
+    document.body = html`<body style="display: flex; flex-direction: row; height: 100vh;">
         <iframe src="https://jeff-hykin.github.io/countdown/" style="width: 60vw; height: 100vh;"></iframe>
         <iframe src="https://jeff-hykin.github.io/weather/" style="width: 40vw; height: 100vh;"></iframe>
     </body>`;
