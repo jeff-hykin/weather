@@ -7035,8 +7035,8 @@ const otherInfo = window.location.href.slice(window.location.origin.length)
 // reload the page once an hour
 if (otherInfo == "/weather/?widget") {
     document.body = html`<body style="display: flex; flex-direction: row; height: 100vh;">
-        <iframe src="https://jeff-hykin.github.io/countdown/" style="width: 60vw; height: 100vh;"></iframe>
-        <iframe src="https://jeff-hykin.github.io/weather/?_=%7B%22latitude%22%3A30.609072311354797%2C%22longitude%22%3A-96.31845092519004%7D" style="width: 40vw; height: 100vh;"></iframe>
+        <iframe src="https://jeff-hykin.github.io/countdown/" style="width: 50vw; height: 100vh;"></iframe>
+        <iframe src="https://jeff-hykin.github.io/weather/?_=%7B%22latitude%22%3A30.609072311354797%2C%22longitude%22%3A-96.31845092519004%7D" style="width: 50vw; height: 100vh;"></iframe>
     </body>`;
 } else {
     setTimeout(() => {window.location.reload()}, 1000*60*60)
