@@ -20,7 +20,7 @@ import router from "./generic_tooling/router.js"
 window.router = router
 let weatherData
 // reload the page once an hour
-if (otherInfo == "/weather/?widget") {
+if (globalThis.otherInfo == "/weather/?widget") {
     document.body = html`<body style="display: flex; flex-direction: row; height: 100vh;">
         <iframe src="https://jeff-hykin.github.io/countdown/" style="width: 50vw; height: 100vh;"></iframe>
         <iframe src="https://jeff-hykin.github.io/weather/?_=%7B%22latitude%22%3A30.609072311354797%2C%22longitude%22%3A-96.31845092519004%7D" style="width: 50vw; height: 100vh;"></iframe>
@@ -58,8 +58,8 @@ if (otherInfo == "/weather/?widget") {
         <body
             font-size=15px
             background-color=whitesmoke
-            overflow=scroll
-            width=100vw
+            overflow-y=scroll
+            width=100%
             display="flex"
             alignItems="center"
             flexDirection="column"
