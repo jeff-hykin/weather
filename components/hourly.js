@@ -81,14 +81,14 @@ export function HourlyTimeline({periods, style, width, height, showDayNames=true
                     data: hourlyData.map(each => each.temperature),
                     borderColor: 'rgb(255, 99, 132)',
                     backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                    radius: 2,
+                    radius: 3,
                     fill: false
                 },
                 {
                     label: 'Risk of Rain (%)',
                     yAxisID: 'rain',
                     data: hourlyData.map(each => each.probabilityOfPrecipitation.value),
-                    radius: 0,
+                    radius: 3,
                     borderColor: 'rgb(54, 162, 235)',
                     backgroundColor: 'rgba(54, 162, 235, 0.5)',
                     fill: true
@@ -97,7 +97,7 @@ export function HourlyTimeline({periods, style, width, height, showDayNames=true
                     label: 'Wind (mph)',
                     yAxisID: 'wind',
                     data: hourlyData.map(each => each.windSpeed.replace(/ mph/g, "")-0),
-                    radius: 0,
+                    radius: 3,
                     borderColor: 'rgb(89, 227, 197)',
                     backgroundColor: 'rgb(89, 227, 197, 0.3)',
                     fill: true,
